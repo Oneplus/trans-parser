@@ -9,6 +9,7 @@ po::options_description TransitionSystemBuilder::get_options() {
   po::options_description cmd("Transition system options");
   cmd.add_options()
     ("system", po::value<std::string>()->default_value("arcstd"), "The transition system [arcstd, arceager, archybrid, swap].")
+    ("root", po::value<std::string>()->default_value("root"), "The root relation name.")
     ;
 
   return cmd;

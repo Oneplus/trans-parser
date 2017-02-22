@@ -39,7 +39,7 @@ void init_command_line(int argc, char* argv[], po::variables_map& conf) {
     ("report_stops", po::value<unsigned>()->default_value(100), "The reporting stops")
     ("evaluate_stops", po::value<unsigned>()->default_value(2500), "The evaluation stops")
     ("evaluate_skips", po::value<unsigned>()->default_value(0), "skip evaluation on the first n round.")
-    ("external_eval", po::value<std::string>()->default_value("python ./scripts/eval.py"), "config the path for evaluation script")
+    ("external_eval", po::value<std::string>()->default_value("python ./script/eval.py"), "config the path for evaluation script")
     ("lambda", po::value<float>()->default_value(0.), "The L2 regularizer, should not set in --dynet-l2.")
     ("output", po::value<std::string>(), "The path to the output file.")
     ("beam_size", po::value<unsigned>(), "The beam size.")

@@ -10,10 +10,7 @@ float evaluate(const po::variables_map& conf,
                const std::string& output) {
   auto t_start = std::chrono::high_resolution_clock::now();
   unsigned kUNK = corpus.get_or_add_word(Corpus::UNK);
-
   std::ofstream ofs(output);
-  float total_reward = 0.;
-  float total_q_value = 0.;
 
   for (unsigned sid = 0; sid < corpus.n_devel; ++sid) {
     InputUnits& input_units = corpus.devel_inputs[sid];
@@ -62,7 +59,7 @@ float beam_search(const po::variables_map & conf,
   unsigned kUNK = corpus.get_or_add_word(Corpus::UNK);
   unsigned beam_size = conf["beam_size"].as<unsigned>();
   bool structure = (conf["supervised_objective"].as<std::string>() == "structure");
-  
+
   std::ofstream ofs(output);
   for (unsigned sid = 0; sid < corpus.n_devel; ++sid) {
     InputUnits& input_units = corpus.devel_inputs[sid];
