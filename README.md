@@ -33,7 +33,7 @@ You can config different parsers with `--architecture` option in the command.
 
 #### ROOT
 Special constrains on parsing action is adopted to make sure the output tree has only one root word with root dependency relation.
-`--root` is used to specify the name relation. Dummy root token is positioned at according to [Going to the roots of dependency parsing](http://www.mitpressjournals.org/doi/pdf/10.1162/COLI_a_00132).
+`--root` is used to specify the name relation. Dummy root token is positioned at right according to [Going to the roots of dependency parsing](http://www.mitpressjournals.org/doi/pdf/10.1162/COLI_a_00132).
 
 #### Dynamic Oracles
 Dynamic oracles outputs the optimal action at non-canonical states (states that are not on the oracle transition sequence).
@@ -50,22 +50,22 @@ Two random replacement strategies are implemented:
 #### Partial Tree
 Training on partially annotated trees follows [Training Dependency Parsers with Partial Annotation](https://arxiv.org/abs/1609.09247) and [Constrained arc-eager dependency parsing](http://www.mitpressjournals.org/doi/abs/10.1162/COLI_a_00184#.WK3jyjvyvx4)
 
-#### Beam-Search
+Training on partial tree is specified by `--partial` option.
 
-Using beam during training is specified by setting `--supervised_objective`to `structure`.
+#### Beam-Search
+Training with beam-search follows [Globally Normalized Transition-Based Neural Networks](https://arxiv.org/abs/1603.06042).
+
+Training with beam-search is specified by setting `--supervised_objective`to `structure`.
 
 ## Train/Test on PTB
 
 An example of the PTB data
 ```
-1 This This DT DT DT 2 det _ _
-2 time time NN NN NN 7 tmod _ _
-3 , , , , , 7 punct _ _
-4 the the DT DT DT 5 det _ _
-5 firms firms NNS NNS NNS 7 nsubj _ _
-6 were were VBD VBD VBD 7 cop _ _
-7 ready ready JJ JJ JJ 0 root _ _
-8 . . . . . 7 punct _ _
+1 Ms. Ms. NNP NNP NNP 2 nn _ _
+2 Haag Haag NNP NNP NNP 3 nsubj _ _
+3 plays plays VBZ VBZ VBZ 0 root _ _
+4 Elianti Elianti NNP NNP NNP 3 dobj _ _
+5 . . . . . 3 punct _ _
 ```
 
 Commands:
@@ -82,13 +82,6 @@ Commands:
     --optimizer_enable_eta_decay true \
     --optimizer_enable_clipping true \
     --external_eval ./script/eval_ex_enpunt.py
-```
-
-## Train on Partial Trees
-Example of partial annotated tree:
-
-```
-
 ```
 
 ## Train/Test w/ Beam-search
@@ -110,6 +103,36 @@ Commands:
     --beam_size 8 \
     --supervised_objective structure
 ```
+
+## Train on Partial Trees
+Example of partial annotated tree:
+
+```
+1 Ms. Ms. NNP NNP NNP 2 nn _ _
+2 Haag Haag NNP NNP NNP _ _ _ _
+3 plays plays VBZ VBZ VBZ 0 root _ _
+4 Elianti Elianti NNP NNP NNP _ _ _ _
+5 . . . . . 3 punct _ _
+```
+The undefined token is marked as `_`.
+
+Commands:
+```
+./bin/trans_parser --dynet-mem 1024 \
+    --dynet-seed 1234 \
+    --train \
+    --architecture d15 \
+    -T ./data/PTB_train_auto.conll \
+    -d ./data/PTB_development_auto.conll \
+    -w ./data/sskip.100.vectors.ptb_filtered \
+    --lambda 1e-5 \
+    --noisify_method singleton \
+    --optimizer_enable_eta_decay true \
+    --optimizer_enable_clipping true \
+    --external_eval ./script/eval_ex_enpunt.py \
+    --partial true
+```
+
 
 ## Results
 

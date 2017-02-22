@@ -61,7 +61,6 @@ void SupervisedTrainer::train(const po::variables_map& conf,
   _INFO << "SUP:: start lstm-parser supervised training.";
 
   dynet::Trainer* trainer = get_trainer(conf, model);
-  unsigned kUNK = corpus.get_or_add_word(Corpus::UNK);
   unsigned max_iter = conf["max_iter"].as<unsigned>();
 
   float llh = 0.f;
@@ -69,7 +68,7 @@ void SupervisedTrainer::train(const po::variables_map& conf,
   float best_f = 0.f;
 
   std::vector<unsigned> order;
-  get_orders(corpus, order, allow_nonprojective);
+  get_orders(corpus, order, allow_nonprojective, allow_partial_tree);
   float n_train = order.size();
 
   unsigned logc = 0;

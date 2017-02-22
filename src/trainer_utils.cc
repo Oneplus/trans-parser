@@ -7,15 +7,16 @@
 
 void get_orders(Corpus& corpus,
                 std::vector<unsigned>& order,
-                bool non_projective) {
+                bool allow_nonprojective,
+                bool allow_partial_tree) {
   order.clear();
   for (unsigned i = 0; i < corpus.training_inputs.size(); ++i) {
     const ParseUnits& parse_units = corpus.training_parses[i];
-    if (!DependencyUtils::is_tree(parse_units)) {
+    if (!allow_partial_tree && !DependencyUtils::is_tree(parse_units)) {
       _INFO << "GetOrders:: #" << i << " not a tree, skipped.";
       continue;
     }
-    if (!non_projective && !DependencyUtils::is_projective(parse_units)) {
+    if (!allow_nonprojective && !DependencyUtils::is_projective(parse_units)) {
       _INFO << "GetOrders:: #" << i << " not projective, skipped.";
       continue;
     }

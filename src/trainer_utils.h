@@ -12,7 +12,8 @@ namespace po = boost::program_options;
 
 void get_orders(Corpus& corpus,
                 std::vector<unsigned>& order,
-                bool non_projective);
+                bool allow_nonprojective,
+                bool allow_partial_tree);
 
 po::options_description get_optimizer_options();
 
