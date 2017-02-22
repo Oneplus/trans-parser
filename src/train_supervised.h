@@ -31,7 +31,8 @@ struct SupervisedTrainer {
              Corpus& corpus,
              const std::string& name,
              const std::string& output,
-             bool allow_nonprojective);
+             bool allow_nonprojective,
+             bool allow_partial_tree);
 
   float train_full_tree(const InputUnits& input_units,
                         const ParseUnits& parse_units,

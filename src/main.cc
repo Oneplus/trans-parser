@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
 
   if (conf.count("train")) {
     SupervisedTrainer trainer(conf, noisifier, parser);
-    trainer.train(conf, corpus, model_name, output, allow_non_projective);
+    trainer.train(conf, corpus, model_name, output, allow_non_projective, allow_partial_tree);
   }
 
   for (auto p : model.parameters_list()) delete p;

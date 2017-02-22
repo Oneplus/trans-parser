@@ -55,7 +55,8 @@ void SupervisedTrainer::train(const po::variables_map& conf,
                               Corpus& corpus,
                               const std::string& name,
                               const std::string& output,
-                              bool allow_nonprojective) {
+                              bool allow_nonprojective,
+                              bool allow_partial_tree) {
   dynet::Model& model = parser->model;
   _INFO << "SUP:: start lstm-parser supervised training.";
 
@@ -89,11 +90,16 @@ void SupervisedTrainer::train(const po::variables_map& conf,
       
       noisifier.noisify(input_units);
       float lp;
-      if (objective_type == kStructure) {
-        lp = train_structure_full_tree(input_units, parse_units, trainer, beam_size);
+      if (!allow_partial_tree) {
+        if (objective_type == kStructure) {
+          lp = train_structure_full_tree(input_units, parse_units, trainer, beam_size);
+        } else {
+          lp = train_full_tree(input_units, parse_units, trainer, iter);
+        }
       } else {
-        lp = train_full_tree(input_units, parse_units, trainer, iter);
+        lp = train_partial_tree(input_units, parse_units, trainer, iter);
       }
+
       llh += lp;
       llh_in_batch += lp;
       noisifier.denoisify(input_units);
