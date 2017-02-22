@@ -24,7 +24,7 @@ If success, you should found the executable `./bin/trans_parser`
 
 #### Train with Different Parsers
 
-Currently, we support the following parsers in the following papers:
+Currently, we support the following parsers in the corresponding papers:
 * d15: [Transition-Based Dependency Parsing with Stack Long Short-Term Memory](http://www.aclweb.org/anthology/P/P15/P15-1033.pdf)
 * b15: [Improved Transition-based Parsing by Modeling Characters instead of Words with LSTMs](http://www.aclweb.org/anthology/D/D15/D15-1041.pdf)
 * k16: [Simple and Accurate Dependency Parsing Using Bidirectional LSTM Feature Representations](http://www.aclweb.org/anthology/Q/Q16/Q16-1023.pdf)
@@ -33,31 +33,36 @@ You can config different parsers with `--architecture` option in the command.
 
 #### ROOT
 Special constrains on parsing action is adopted to make sure the output tree has only one root word with root dependency relation.
-`--root` is used to specify the name relation. Dummy root token is positioned at right according to [Going to the roots of dependency parsing](http://www.mitpressjournals.org/doi/pdf/10.1162/COLI_a_00132).
+`--root` is used to specify the relation name. Dummy root token is positioned at right according to [Going to the roots of dependency parsing](http://www.mitpressjournals.org/doi/pdf/10.1162/COLI_a_00132).
 
 #### Dynamic Oracles
 Dynamic oracles outputs the optimal action at non-canonical states (states that are not on the oracle transition sequence).
 * ArcStandard: [A tabular method for dynamic oracles in transition-based parsing](https://transacl.org/ojs/index.php/tacl/article/view/302/38)
 * {ArcHybrid|ArcEager}: [Training deterministic parsers with non-deterministic oracles](https://www.transacl.org/ojs/index.php/tacl/article/view/145/27)
 
-Dynamic oracles are set by `--supervised_oracle` option.
+Dynamic oracles can be activated by setting `--supervised_oracle` option as `true`.
 
 #### Noisify
+Nosifying means randomly set some words as unknown word to improve the model's generalization ability.
 Two random replacement strategies are implemented:
 * *singleton*: random replace singleton during training according to [Transition-Based Dependency Parsing with Stack Long Short-Term Memory](http://www.aclweb.org/anthology/P/P15/P15-1033.pdf)
 * *word*: word dropout strategy according to [Deep unordered composi-tion rivals syntactic methods for text classification](https://cs.umd.edu/~miyyer/pubs/2015_acl_dan.pdf).
 
 #### Partial Tree
-Training on partially annotated trees follows [Training Dependency Parsers with Partial Annotation](https://arxiv.org/abs/1609.09247) and [Constrained arc-eager dependency parsing](http://www.mitpressjournals.org/doi/abs/10.1162/COLI_a_00184#.WK3jyjvyvx4)
+Training on partially annotated trees generally follows [Training Dependency Parsers with Partial Annotation](https://arxiv.org/abs/1609.09247) and [Constrained arc-eager dependency parsing](http://www.mitpressjournals.org/doi/abs/10.1162/COLI_a_00184#.WK3jyjvyvx4).
+The basic idea is performing constrained decoding on the partial tree to get a pseduo-oracle sequence and use it as training data.
 
-Training on partial tree is specified by `--partial` option.
+Training on partial tree is specified by setting `--partial` option as `true`.
 
 #### Beam-Search
 Training with beam-search follows [Globally Normalized Transition-Based Neural Networks](https://arxiv.org/abs/1603.06042).
+Early stopping is used.
 
-Training with beam-search is specified by setting `--supervised_objective`to `structure`.
+Training with beam-search is specified by setting `--supervised_objective`to `structure` and `--beam_size` greater than 1.
 
-## Train/Test on PTB
+Testing with beam-search only needs to set `--beam_size` greater than 1.
+
+## Train/test on PTB
 
 An example of the PTB data
 ```
@@ -84,7 +89,7 @@ Commands:
     --external_eval ./script/eval_ex_enpunt.py
 ```
 
-## Train/Test w/ Beam-search
+## Train/test w/ Beam-search
 
 Commands:
 ```
@@ -114,7 +119,7 @@ Example of partial annotated tree:
 4 Elianti Elianti NNP NNP NNP _ _ _ _
 5 . . . . . 3 punct _ _
 ```
-The undefined token is marked as `_`.
+The token without annotation (say Haag, Elianti in this example) is marked as `_`.
 
 Commands:
 ```
@@ -122,7 +127,7 @@ Commands:
     --dynet-seed 1234 \
     --train \
     --architecture d15 \
-    -T ./data/PTB_train_auto.conll \
+    -T ./data/PTB_train_auto.drop_arc_0.50.conll \
     -d ./data/PTB_development_auto.conll \
     -w ./data/sskip.100.vectors.ptb_filtered \
     --lambda 1e-5 \
