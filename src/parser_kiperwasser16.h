@@ -63,26 +63,31 @@ struct Kiperwasser16ParserState : public ParserState {
   struct FeatureExtractor {
     Kiperwasser16ParserState * hook;
     FeatureExtractor(Kiperwasser16ParserState * hook) : hook(hook) {}
+    ~FeatureExtractor() {}
     virtual void extract(const TransitionState & state) = 0;
   };
 
   struct ArcEagerExtractor : public FeatureExtractor {
     ArcEagerExtractor(Kiperwasser16ParserState * hook) : FeatureExtractor(hook) {}
+    ~ArcEagerExtractor() {}
     void extract(const TransitionState & state) override;
   };
 
   struct ArcStandardExtractor : public FeatureExtractor {
     ArcStandardExtractor(Kiperwasser16ParserState * hook) : FeatureExtractor(hook) {}
+    ~ArcStandardExtractor() {}
     void extract(const TransitionState & state) override;
   };
 
   struct ArcHybridExtractor : public FeatureExtractor {
     ArcHybridExtractor(Kiperwasser16ParserState * hook) : FeatureExtractor(hook) {}
+    ~ArcHybridExtractor() {}
     void extract(const TransitionState & state) override;
   };
 
   struct SwapExtractor : public FeatureExtractor {
     SwapExtractor(Kiperwasser16ParserState * hook) : FeatureExtractor(hook) {}
+    ~SwapExtractor() {}
     void extract(const TransitionState & state) override;
   };
 

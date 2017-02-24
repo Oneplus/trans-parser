@@ -15,12 +15,16 @@ struct ParserModel {
 
   ParserModel(TransitionSystem & system) : system(system) {}
 
+  ~ParserModel() {}
+
   TransitionSystem & get_system() { return system; }
 
   virtual void new_graph(dynet::ComputationGraph& cg) = 0;
 };
 
 struct ParserState {
+  ~ParserState() {}
+
   static std::pair<unsigned, float> get_best_action(const std::vector<float>& scores,
                                                     const std::vector<unsigned>& valid_actions);
 

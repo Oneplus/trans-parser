@@ -74,30 +74,35 @@ struct Dyer15ParserState : public ParserState {
   struct ActionPerformer {
     Dyer15ParserState * state;
     ActionPerformer(Dyer15ParserState * state) : state(state) {}
+    virtual ~ActionPerformer() {}
     virtual void perform_action(const unsigned& action,
                                 dynet::ComputationGraph& cg) = 0;
   };
 
   struct ArcEagerPerformer : public ActionPerformer {
     ArcEagerPerformer(Dyer15ParserState * state) : ActionPerformer(state) {}
+    ~ArcEagerPerformer() {}
     void perform_action(const unsigned& action,
                         dynet::ComputationGraph& cg) override;
   };
 
   struct ArcStandardPerformer : public ActionPerformer {
     ArcStandardPerformer(Dyer15ParserState * state) : ActionPerformer(state) {}
+    ~ArcStandardPerformer() {}
     void perform_action(const unsigned& action,
                         dynet::ComputationGraph& cg) override;
   };
 
   struct ArcHybridPerformer : public ActionPerformer {
     ArcHybridPerformer(Dyer15ParserState * state) : ActionPerformer(state) {}
+    ~ArcHybridPerformer() {}
     void perform_action(const unsigned& action,
                         dynet::ComputationGraph& cg) override;
   };
 
   struct SwapPerformer : public ActionPerformer {
     SwapPerformer(Dyer15ParserState * state) : ActionPerformer(state) {}
+    ~SwapPerformer() {}
     void perform_action(const unsigned& action,
                         dynet::ComputationGraph& cg) override;
   };
