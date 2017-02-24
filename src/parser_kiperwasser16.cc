@@ -53,8 +53,6 @@ void Kiperwasser16ParserModel::new_graph(dynet::ComputationGraph & cg) {
 }
 
 void Kiperwasser16ParserState::ArcEagerExtractor::extract(const TransitionState & state) {
-  // S1, S0, B0, B1
-  // should do after sys.perform_action
   dynet::expr::Expression & empty = hook->model.empty;
   dynet::expr::Expression & f0 = hook->f0;
   dynet::expr::Expression & f1 = hook->f1;
@@ -80,12 +78,12 @@ void Kiperwasser16ParserState::ArcStandardExtractor::extract(const TransitionSta
   std::vector<dynet::expr::Expression> & encoded = hook->encoded;
   
   unsigned stack_size = state.stack.size();
-  if (stack_size > 3) { f0 = encoded[state.stack[stack_size - 3]]; } else { f0 = empty; }
-  if (stack_size > 2) { f1 = encoded[state.stack[stack_size - 2]]; } else { f1 = empty; }
-  if (stack_size > 1) { f2 = encoded[state.stack[stack_size - 1]]; } else { f2 = empty; }
+  f0 = (stack_size > 3 ? encoded[state.stack[stack_size - 3]] : empty);
+  f1 = (stack_size > 2 ? encoded[state.stack[stack_size - 2]] : empty);
+  f2 = (stack_size > 1 ? encoded[state.stack[stack_size - 1]] : empty);
 
   unsigned buffer_size = state.buffer.size();
-  if (buffer_size > 1) { f3 = encoded[state.buffer[buffer_size - 1]]; } else { f3 = empty; }
+  f3 = (buffer_size > 1 ? encoded[state.buffer[buffer_size - 1]] : empty);
 }
 
 void Kiperwasser16ParserState::ArcHybridExtractor::extract(const TransitionState & state) {
@@ -97,12 +95,12 @@ void Kiperwasser16ParserState::ArcHybridExtractor::extract(const TransitionState
   std::vector<dynet::expr::Expression> & encoded = hook->encoded;
 
   unsigned stack_size = state.stack.size();
-  if (stack_size > 3) { f0 = encoded[state.stack[stack_size - 3]]; } else { f0 = empty; }
-  if (stack_size > 2) { f1 = encoded[state.stack[stack_size - 2]]; } else { f1 = empty; }
-  if (stack_size > 1) { f2 = encoded[state.stack[stack_size - 1]]; } else { f2 = empty; }
+  f0 = (stack_size > 3 ? encoded[state.stack[stack_size - 3]] : empty);
+  f1 = (stack_size > 2 ? encoded[state.stack[stack_size - 2]] : empty);
+  f2 = (stack_size > 1 ? encoded[state.stack[stack_size - 1]] : empty);
 
   unsigned buffer_size = state.buffer.size();
-  if (buffer_size > 1) { f3 = encoded[state.buffer[buffer_size - 1]]; } else { f3 = empty; }
+  f3 = (buffer_size > 1 ? encoded[state.buffer[buffer_size - 1]] : empty);
 }
 
 void Kiperwasser16ParserState::SwapExtractor::extract(const TransitionState & state) {
@@ -114,12 +112,12 @@ void Kiperwasser16ParserState::SwapExtractor::extract(const TransitionState & st
   std::vector<dynet::expr::Expression> & encoded = hook->encoded;
   
   unsigned stack_size = state.stack.size();
-  if (stack_size > 3) { f0 = encoded[state.stack[stack_size - 3]]; } else { f0 = empty; }
-  if (stack_size > 2) { f1 = encoded[state.stack[stack_size - 2]]; } else { f1 = empty; }
-  if (stack_size > 1) { f2 = encoded[state.stack[stack_size - 1]]; } else { f2 = empty; }
+  f0 = (stack_size > 3 ? encoded[state.stack[stack_size - 3]] : empty);
+  f1 = (stack_size > 2 ? encoded[state.stack[stack_size - 2]] : empty);
+  f2 = (stack_size > 1 ? encoded[state.stack[stack_size - 1]] : empty);
 
   unsigned buffer_size = state.buffer.size();
-  if (buffer_size > 1) { f3 = encoded[state.buffer[buffer_size - 1]]; } else { f3 = empty; }
+  f3 = (buffer_size > 1 ? encoded[state.buffer[buffer_size - 1]] : empty);
 }
 
 Kiperwasser16ParserState::Kiperwasser16ParserState(Kiperwasser16ParserModel & model) : model(model) {
@@ -133,7 +131,7 @@ Kiperwasser16ParserState::Kiperwasser16ParserState(Kiperwasser16ParserModel & mo
   } else if (system_name == "swap") {
     extractor = new SwapExtractor(this);
   } else {
-    _ERROR << "D15:: Unknown transition system: " << system_name;
+    _ERROR << "K16:: Unknown transition system: " << system_name;
     exit(1);
   }
 }
@@ -194,9 +192,11 @@ ParserState * Kiperwasser16ParserState::copy() {
   new_parser_state->f1 = f1;
   new_parser_state->f2 = f2;
   new_parser_state->f3 = f3;
+  new_parser_state->encoded = encoded;
   return new_parser_state;
 }
 
 dynet::expr::Expression Kiperwasser16ParserState::get_scores() {
-  return dynet::expr::tanh(model.merge.get_output(f0, f1, f2, f3));
+  return model.scorer.get_output(
+    dynet::expr::tanh(model.merge.get_output(f0, f1, f2, f3)));
 }

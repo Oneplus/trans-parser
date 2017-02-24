@@ -65,8 +65,7 @@ float evaluate(const po::variables_map & conf,
   }
   ofs.close();
   auto t_end = std::chrono::high_resolution_clock::now();
-  float f_score = execute_and_get_result(conf["external_eval"].as<std::string>(),
-                                         output);
+  float f_score = execute_and_get_result(conf["external_eval"].as<std::string>(), output);
   _INFO << "Evaluate:: UAS " << f_score << " [" << corpus.n_devel <<
     " sents in " << std::chrono::duration<double, std::milli>(t_end - t_start).count() << " ms]";
   return f_score;
@@ -109,7 +108,6 @@ float beam_search(const po::variables_map & conf,
     transition_states[0].initialize(input_units);
     
     unsigned curr = 0, next = 1;
-    unsigned n_step = 0;
     while (!transition_states[curr].terminated()) {
       std::vector<Transition> transitions;
       for (unsigned i = curr; i < next; ++i) {
@@ -179,8 +177,7 @@ float beam_search(const po::variables_map & conf,
   }
   ofs.close();
   auto t_end = std::chrono::high_resolution_clock::now();
-  float f_score = execute_and_get_result(conf["external_eval"].as<std::string>(),
-                                         output);
+  float f_score = execute_and_get_result(conf["external_eval"].as<std::string>(), output);
   _INFO << "Evaluate:: UAS " << f_score << " [" << corpus.n_devel <<
     " sents in " << std::chrono::duration<double, std::milli>(t_end - t_start).count() << " ms]";
   return f_score;

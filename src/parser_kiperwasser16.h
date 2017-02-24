@@ -64,6 +64,7 @@ struct Kiperwasser16ParserState : public ParserState {
     Kiperwasser16ParserState * hook;
     FeatureExtractor(Kiperwasser16ParserState * hook) : hook(hook) {}
     ~FeatureExtractor() {}
+    // should do after sys.perform_action
     virtual void extract(const TransitionState & state) = 0;
   };
 
@@ -98,9 +99,9 @@ struct Kiperwasser16ParserState : public ParserState {
   void new_graph(dynet::ComputationGraph & cg) override;
 
   void initialize(dynet::ComputationGraph& cg,
-                  const InputUnits& input) override;
+                  const InputUnits & input) override;
 
-  void perform_action(const unsigned& action,
+  void perform_action(const unsigned & action,
                       dynet::ComputationGraph& cg,
                       const TransitionState & state) override;
 

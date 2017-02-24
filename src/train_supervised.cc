@@ -428,6 +428,7 @@ float SupervisedTrainer::train_partial_tree(const InputUnits& input_units,
     n_actions++;
   }
   delete parser_state;
+
   float ret = 0.f;
   if (loss.size() > 0) {
     dynet::expr::Expression l = dynet::expr::sum(loss);
