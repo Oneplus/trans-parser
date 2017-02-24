@@ -10,7 +10,7 @@
 namespace po = boost::program_options;
 
 struct ParserStateBuilder {
-  enum PARSER_ID { kDyer15, kBallesteros15 };
+  enum PARSER_ID { kDyer15, kBallesteros15, kKiperwasser16 };
   PARSER_ID parser_id;
 
   dynet::Model & model;
