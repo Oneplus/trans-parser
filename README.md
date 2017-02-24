@@ -1,7 +1,7 @@
 Transition-based Parser
 =======================
 
-Hope you can find everything you want and happy parsing :smile:.
+Hope you can find everything you want and happy parsing :smiley:.
 
 ## Compile
 
@@ -46,13 +46,15 @@ Dynamic oracles can be activated by setting `--supervised_oracle` option as `tru
 Nosifying means randomly set some words as unknown word to improve the model's generalization ability.
 Two random replacement strategies are implemented:
 * *singleton*: random replace singleton during training according to [Transition-Based Dependency Parsing with Stack Long Short-Term Memory](http://www.aclweb.org/anthology/P/P15/P15-1033.pdf)
-* *word*: word dropout strategy according to [Deep unordered composi-tion rivals syntactic methods for text classification](https://cs.umd.edu/~miyyer/pubs/2015_acl_dan.pdf).
+* *word*: word dropout strategy according to [Deep unordered composition rivals syntactic methods for text classification](https://cs.umd.edu/~miyyer/pubs/2015_acl_dan.pdf).
 
 #### Partial Tree
 Training on partially annotated trees generally follows [Training Dependency Parsers with Partial Annotation](https://arxiv.org/abs/1609.09247) and [Constrained arc-eager dependency parsing](http://www.mitpressjournals.org/doi/abs/10.1162/COLI_a_00184#.WK3jyjvyvx4).
 The basic idea is performing constrained decoding on the partial tree to get a pseduo-oracle sequence and use it as training data.
 
 Training on partial tree is specified by setting `--partial` option as `true`.
+
+**WARNING**: training with partial tree on `ArcStandard` system is impossible at current status.
 
 #### Beam-Search
 Training with beam-search follows [Globally Normalized Transition-Based Neural Networks](https://arxiv.org/abs/1603.06042).
@@ -137,7 +139,6 @@ Commands:
     --external_eval ./script/eval_ex_enpunt.py \
     --partial true
 ```
-
 
 ## Results
 

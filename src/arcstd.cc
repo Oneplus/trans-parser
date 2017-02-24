@@ -30,21 +30,25 @@ ArcStandard::ArcStandard(const Alphabet& map,
   }
 }
 
-std::string ArcStandard::name(unsigned id) const {
+std::string ArcStandard::action_name(unsigned id) const {
   BOOST_ASSERT_MSG(id < action_names.size(), "id in illegal range");
   return action_names[id];
+}
+
+std::string ArcStandard::system_name() const {
+  return "arcstd";
 }
 
 unsigned ArcStandard::num_actions() const { return n_actions; }
 
 unsigned ArcStandard::num_deprels() const { return deprel_map.size(); }
 
-void ArcStandard::shift_unsafe(State& state) const {
+void ArcStandard::shift_unsafe(TransitionState& state) const {
   state.stack.push_back(state.buffer.back());
   state.buffer.pop_back();
 }
 
-void ArcStandard::left_unsafe(State& state,
+void ArcStandard::left_unsafe(TransitionState& state,
                               const unsigned& deprel) const {
   unsigned hed = state.stack.back(); state.stack.pop_back();
   unsigned mod = state.stack.back(); state.stack.back() = hed;
@@ -52,7 +56,7 @@ void ArcStandard::left_unsafe(State& state,
   state.deprels[mod] = deprel;
 }
 
-void ArcStandard::right_unsafe(State& state,
+void ArcStandard::right_unsafe(TransitionState& state,
                                const unsigned& deprel) const {
   unsigned mod = state.stack.back(); state.stack.pop_back();
   unsigned hed = state.stack.back(); 
@@ -60,7 +64,7 @@ void ArcStandard::right_unsafe(State& state,
   state.deprels[mod] = deprel;
 }
 
-unsigned ArcStandard::cost(const State& state,
+unsigned ArcStandard::cost(const TransitionState& state,
                            const std::vector<unsigned>& ref_heads,
                            const std::vector<unsigned>& ref_deprels) const {
   // handling the initial state.
@@ -88,8 +92,8 @@ unsigned ArcStandard::cost(const State& state,
   std::vector<unsigned> sigma_r; sigma_r.push_back(sigma_l.back());
 
   // constructing sigma_r
-  std::bitset<State::MAX_N_WORDS> sigma_l_mask;
-  std::bitset<State::MAX_N_WORDS> sigma_r_mask;
+  std::bitset<TransitionState::MAX_N_WORDS> sigma_l_mask;
+  std::bitset<TransitionState::MAX_N_WORDS> sigma_r_mask;
   for (auto s : sigma_l) { sigma_l_mask.set(s); }
 
   unsigned buffer_front = buffer.back();
@@ -162,7 +166,7 @@ unsigned ArcStandard::cost(const State& state,
   return T[len_l - 1][len_r - 1][root] + penalty;
 }
 
-void ArcStandard::get_transition_costs(const State & state,
+void ArcStandard::get_transition_costs(const TransitionState & state,
                                        const std::vector<unsigned>& actions,
                                        const std::vector<unsigned>& ref_heads,
                                        const std::vector<unsigned>& ref_deprels,
@@ -173,17 +177,17 @@ void ArcStandard::get_transition_costs(const State & state,
 
   for (unsigned act : actions) {
     if (is_shift(act)) {
-      State next_state(state);
+      TransitionState next_state(state);
       perform_action(next_state, act);
       costs.push_back(c - cost(next_state, ref_heads, ref_deprels));
     } else if (is_left(act)) {
       unsigned deprel = parse_label(act), hed = state.stack.back(), mod = state.stack[state.stack.size() - 2]; 
       if (ref_heads[mod] == hed && ref_deprels[mod] == deprel) {
         // assume that actions are unique and there is only one correct left action.
-        State next_state(state); perform_action(next_state, act);
+        TransitionState next_state(state); perform_action(next_state, act);
         costs.push_back(c - cost(next_state, ref_heads, ref_deprels));
       } else if (wrong_left == -1e8) {
-        State next_state(state); perform_action(next_state, act);
+        TransitionState next_state(state); perform_action(next_state, act);
         wrong_left = c - cost(next_state, ref_heads, ref_deprels);
         costs.push_back(wrong_left);
       } else {
@@ -192,10 +196,10 @@ void ArcStandard::get_transition_costs(const State & state,
     } else {
       unsigned deprel = parse_label(act), mod = state.stack.back(), hed = state.stack[state.stack.size() - 2];
       if (ref_heads[mod] == hed && ref_deprels[mod] == deprel) {
-        State next_state(state); perform_action(next_state, act);
+        TransitionState next_state(state); perform_action(next_state, act);
         costs.push_back(c - cost(next_state, ref_heads, ref_deprels));
       } else if (wrong_right == -1e8) {
-        State next_state(state); perform_action(next_state, act);
+        TransitionState next_state(state); perform_action(next_state, act);
         wrong_right = c - cost(next_state, ref_heads, ref_deprels);
         costs.push_back(wrong_right);
       } else {
@@ -205,7 +209,7 @@ void ArcStandard::get_transition_costs(const State & state,
   }
 }
 
-void ArcStandard::perform_action(State & state, const unsigned& action) {
+void ArcStandard::perform_action(TransitionState & state, const unsigned& action) {
   if (is_shift(action)) {
     // SHITF: counting for the last GUARD
     shift_unsafe(state);
@@ -228,7 +232,7 @@ bool ArcStandard::is_shift(const unsigned& action) { return action == 0; }
 bool ArcStandard::is_left(const unsigned& action) { return (action > 0 && action % 2 == 1); }
 bool ArcStandard::is_right(const unsigned& action) { return (action > 0 && action % 2 == 0); }
 
-bool ArcStandard::is_valid_action(const State& state, const unsigned& act) const {
+bool ArcStandard::is_valid_action(const TransitionState& state, const unsigned& act) const {
   if (is_shift(act)) {
     if (state.buffer.size() == 1) { return false; }
   } else {
@@ -238,7 +242,7 @@ bool ArcStandard::is_valid_action(const State& state, const unsigned& act) const
   return true;
 }
 
-void ArcStandard::get_valid_actions(const State& state, std::vector<unsigned>& valid_actions) {
+void ArcStandard::get_valid_actions(const TransitionState& state, std::vector<unsigned>& valid_actions) {
   valid_actions.clear();
   for (unsigned a = 0; a < n_actions; ++a) {
     //if (!is_valid_action(state, action_names[a])) { continue; }

@@ -24,6 +24,7 @@ struct ParseUnit {
 
 typedef std::vector<InputUnit> InputUnits;
 typedef std::vector<ParseUnit> ParseUnits;
+typedef std::unordered_map<unsigned, std::vector<float>> Embeddings;
 
 void parse_to_vector(const ParseUnits& parse,
                      std::vector<unsigned>& heads,
@@ -83,10 +84,10 @@ struct Corpus {
 
   void load_word_embeddings(const std::string& embedding_file,
                             unsigned pretrained_dim,
-                            std::unordered_map<unsigned, std::vector<float> >& pretrained);
+                            Embeddings & pretrained);
 
   void load_empty_embeddings(unsigned pretrained_dim,
-                             std::unordered_map<unsigned, std::vector<float> >& pretrained);
+                             Embeddings & pretrained);
 };
 
 #endif  //  end for CORPUS_H

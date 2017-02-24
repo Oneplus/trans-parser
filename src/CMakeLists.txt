@@ -19,8 +19,8 @@ add_executable(trans_parser
     train_supervised.h
     evaluate.cc
     evaluate.h
-    state.h
-    state.cc
+    #state.h
+    #state.cc
     arcstd.cc
     arcstd.h
     arceager.cc
@@ -29,6 +29,7 @@ add_executable(trans_parser
     archybrid.h
     swap.cc
     swap.h
+	system.cc
     system.h
 	system_builder.cc
 	system_builder.h

@@ -5,7 +5,7 @@
 #include <set>
 #include <boost/program_options.hpp>
 #include "dynet/training.h"
-#include "parser.h"
+#include "parser_builder.h"
 #include "noisify.h"
 
 namespace po = boost::program_options;
@@ -15,7 +15,7 @@ struct SupervisedTrainer {
   enum OBJECTIVE_TYPE { kCrossEntropy, kRank, kBipartieRank, kStructure };
   ORACLE_TYPE oracle_type;
   OBJECTIVE_TYPE objective_type;
-  Parser* parser;
+  ParserStateBuilder & state_builder;
   const Noisifier& noisifier;
   float do_pretrain_iter;
   float do_explore_prob;
@@ -24,7 +24,7 @@ struct SupervisedTrainer {
 
   SupervisedTrainer(const po::variables_map& conf,
                     const Noisifier& noisifier,
-                    Parser* parser);
+                    ParserStateBuilder & state_builder);
 
   /* Code for supervised pretraining. */
   void train(const po::variables_map& conf,
@@ -42,7 +42,8 @@ struct SupervisedTrainer {
   float train_structure_full_tree(const InputUnits & input_units,
                                   const ParseUnits & parse_units,
                                   dynet::Trainer * trainer,
-                                  unsigned beam_size);
+                                  unsigned beam_size,
+                                  unsigned iter);
 
   float train_partial_tree(const InputUnits& input_units,
                            const ParseUnits& parse_units,

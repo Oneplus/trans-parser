@@ -5,8 +5,9 @@
 #include <vector>
 #include <random>
 
-std::pair<unsigned, float> Parser::get_best_action(const std::vector<float>& scores,
-                                                   const std::vector<unsigned>& valid_actions) {
+
+std::pair<unsigned, float> ParserState::get_best_action(const std::vector<float>& scores,
+                                                        const std::vector<unsigned>& valid_actions) {
   unsigned best_a = valid_actions[0];
   float best_score = scores[best_a];
   //! should use next valid action.
@@ -20,22 +21,7 @@ std::pair<unsigned, float> Parser::get_best_action(const std::vector<float>& sco
   return std::make_pair(best_a, best_score);
 }
 
-void Parser::initialize(dynet::ComputationGraph & cg,
-                        const InputUnits & input,
-                        State & state,
-                        Parser::StateCheckpoint * checkpoint) {
-  initialize_state(input, state);
-  initialize_parser(cg, input, checkpoint);
-}
-
-void Parser::initialize_state(const InputUnits & input, State & state) {
-  unsigned len = input.size();
-  state.buffer.resize(len + 1);
-  for (unsigned i = 0; i < len; ++i) { state.buffer[len - i] = i; }
-  state.buffer[0] = Corpus::BAD_HED;
-  state.stack.push_back(Corpus::BAD_HED);
-}
-
+/*
 void Parser::predict(dynet::ComputationGraph& cg,
                      const InputUnits& input,
                      ParseUnits& parse) {
@@ -132,3 +118,4 @@ void Parser::beam_search(dynet::ComputationGraph & cg,
     vector_to_parse(states[i].heads, states[i].deprels, parses[i - curr]);
   }
 }
+*/

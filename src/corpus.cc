@@ -247,7 +247,7 @@ void Corpus::stat() {
 
 void Corpus::load_word_embeddings(const std::string & embedding_file,
                                   unsigned pretrained_dim,
-                                  std::unordered_map<unsigned, std::vector<float>>& pretrained) {
+                                  Embeddings & pretrained) {
   pretrained[norm_map.insert(Corpus::BAD0)] = std::vector<float>(pretrained_dim, 0.);
   pretrained[norm_map.insert(Corpus::UNK)] = std::vector<float>(pretrained_dim, 0.);
   pretrained[norm_map.insert(Corpus::ROOT)] = std::vector<float>(pretrained_dim, 0.);
@@ -271,7 +271,7 @@ void Corpus::load_word_embeddings(const std::string & embedding_file,
 }
 
 void Corpus::load_empty_embeddings(unsigned pretrained_dim,
-                                   std::unordered_map<unsigned, std::vector<float>>& pretrained) {
+                                   Embeddings & pretrained) {
   pretrained[norm_map.insert(Corpus::BAD0)] = std::vector<float>(pretrained_dim, 0.);
   pretrained[norm_map.insert(Corpus::UNK)] = std::vector<float>(pretrained_dim, 0.);
   pretrained[norm_map.insert(Corpus::ROOT)] = std::vector<float>(pretrained_dim, 0.);

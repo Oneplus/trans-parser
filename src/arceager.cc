@@ -27,7 +27,11 @@ ArcEager::ArcEager(const Alphabet& map,
   }
 }
 
-std::string ArcEager::name(unsigned id) const {
+std::string ArcEager::system_name() const {
+  return "arceager";
+}
+
+std::string ArcEager::action_name(unsigned id) const {
   BOOST_ASSERT_MSG(id < action_names.size(), "id in illegal range");
   return action_names[id];
 }
@@ -46,12 +50,12 @@ unsigned ArcEager::get_reduce_id() { return 1; }
 unsigned ArcEager::get_left_id(const unsigned& deprel)  { return deprel * 2 + 2; }
 unsigned ArcEager::get_right_id(const unsigned& deprel) { return deprel * 2 + 3; }
 
-void ArcEager::shift_unsafe(State& state) const {
+void ArcEager::shift_unsafe(TransitionState& state) const {
   state.stack.push_back(state.buffer.back());
   state.buffer.pop_back();
 }
 
-void ArcEager::left_unsafe(State& state, const unsigned& deprel) const {
+void ArcEager::left_unsafe(TransitionState& state, const unsigned& deprel) const {
   unsigned mod = state.stack.back();
   unsigned hed = state.buffer.back();
   state.stack.pop_back();
@@ -59,7 +63,7 @@ void ArcEager::left_unsafe(State& state, const unsigned& deprel) const {
   state.deprels[mod] = deprel;
 }
 
-void ArcEager::right_unsafe(State& state, const unsigned& deprel) const {
+void ArcEager::right_unsafe(TransitionState& state, const unsigned& deprel) const {
   unsigned hed = state.stack.back();
   unsigned mod = state.buffer.back();
   state.stack.push_back(state.buffer.back());
@@ -68,11 +72,11 @@ void ArcEager::right_unsafe(State& state, const unsigned& deprel) const {
   state.deprels[mod] = deprel;
 }
 
-void ArcEager::reduce_unsafe(State& state) const {
+void ArcEager::reduce_unsafe(TransitionState& state) const {
   state.stack.pop_back();
 }
 
-float ArcEager::shift_dynamic_loss_unsafe(State& state,
+float ArcEager::shift_dynamic_loss_unsafe(TransitionState& state,
                                           const std::vector<unsigned>& ref_heads,
                                           const std::vector<unsigned>& ref_deprels) const {
   float c = 0.;
@@ -86,7 +90,7 @@ float ArcEager::shift_dynamic_loss_unsafe(State& state,
   return c;
 }
 
-float ArcEager::left_dynamic_loss_unsafe(State& state,
+float ArcEager::left_dynamic_loss_unsafe(TransitionState& state,
                                          const unsigned& deprel,
                                          const std::vector<unsigned>& ref_heads,
                                          const std::vector<unsigned>& ref_deprels) const {
@@ -104,7 +108,7 @@ float ArcEager::left_dynamic_loss_unsafe(State& state,
   return c;
 }
 
-float ArcEager::right_dynamic_loss_unsafe(State& state,
+float ArcEager::right_dynamic_loss_unsafe(TransitionState& state,
                                           const unsigned& deprel,
                                           const std::vector<unsigned>& ref_heads,
                                           const std::vector<unsigned>& ref_deprels) const {
@@ -128,7 +132,7 @@ float ArcEager::right_dynamic_loss_unsafe(State& state,
   return c;
 }
 
-float ArcEager::reduce_dynamic_loss_unsafe(State& state,
+float ArcEager::reduce_dynamic_loss_unsafe(TransitionState& state,
                                            const std::vector<unsigned>& ref_heads,
                                            const std::vector<unsigned>& ref_deprels) const {
   float c = 0.;
@@ -141,7 +145,7 @@ float ArcEager::reduce_dynamic_loss_unsafe(State& state,
   return c;
 }
 
-void ArcEager::get_transition_costs(const State& state,
+void ArcEager::get_transition_costs(const TransitionState& state,
                                     const std::vector<unsigned>& actions,
                                     const std::vector<unsigned>& ref_heads,
                                     const std::vector<unsigned>& ref_deprels,
@@ -151,7 +155,7 @@ void ArcEager::get_transition_costs(const State& state,
   rewards.clear();
 
   for (unsigned act : actions) {
-    State next_state(state);
+    TransitionState next_state(state);
     if (is_shift(act)) {
       rewards.push_back(-shift_dynamic_loss_unsafe(next_state, ref_heads, ref_deprels));
     } else if (is_left(act)) {
@@ -183,7 +187,7 @@ void ArcEager::get_transition_costs(const State& state,
   }
 }
 
-void ArcEager::perform_action(State& state, const unsigned& action) {
+void ArcEager::perform_action(TransitionState& state, const unsigned& action) {
   if (is_shift(action)) {
     shift_unsafe(state);
   } else if (is_left(action)) {
@@ -195,11 +199,11 @@ void ArcEager::perform_action(State& state, const unsigned& action) {
   }
 }
 
-bool ArcEager::is_valid_action(const State & state, const unsigned & act) const {
+bool ArcEager::is_valid_action(const TransitionState & state, const unsigned & act) const {
   return false;
 }
 
-void ArcEager::get_valid_actions(const State& state, std::vector<unsigned>& valid_actions) {
+void ArcEager::get_valid_actions(const TransitionState& state, std::vector<unsigned>& valid_actions) {
   valid_actions.clear();
   unsigned root_id = state.heads.size() - 1;
   unsigned b = state.buffer.back();

@@ -15,28 +15,30 @@ struct Swap : public TransitionSystem {
   Swap(const Alphabet& deprel_map,
        const std::string & root_string);
 
-  std::string name(unsigned id) const override;
+  std::string system_name() const override;
+
+  std::string action_name(unsigned id) const override;
 
   unsigned num_actions() const override;
 
   unsigned num_deprels() const override;
 
-  void get_transition_costs(const State& state,
+  void get_transition_costs(const TransitionState& state,
                             const std::vector<unsigned>& actions,
                             const std::vector<unsigned>& ref_heads,
                             const std::vector<unsigned>& ref_deprels,
                             std::vector<float>& rewards);
 
-  void perform_action(State& state, const unsigned& action) override;
+  void perform_action(TransitionState& state, const unsigned& action) override;
 
-  void get_valid_actions(const State& state,
+  void get_valid_actions(const TransitionState& state,
                          std::vector<unsigned>& valid_actions) override;
   
   void get_oracle_actions(const std::vector<unsigned>& heads,
                           const std::vector<unsigned>& deprels,
                           std::vector<unsigned>& actions) override;
 
-  bool is_valid_action(const State& state, const unsigned& act) const override;
+  bool is_valid_action(const TransitionState& state, const unsigned& act) const override;
 
   void get_oracle_actions_calculate_orders(const unsigned & root,
                                            const std::vector<std::vector<unsigned>>& tree,
@@ -66,10 +68,10 @@ struct Swap : public TransitionSystem {
                                            std::vector<unsigned>& heads,
                                            std::vector<unsigned>& actions);
 
-  void shift_unsafe(State& state) const;
-  void swap_unsafe(State& state) const;
-  void left_unsafe(State& state, const unsigned& deprel) const;
-  void right_unsafe(State& state, const unsigned& deprel) const;
+  void shift_unsafe(TransitionState& state) const;
+  void swap_unsafe(TransitionState& state) const;
+  void left_unsafe(TransitionState& state, const unsigned& deprel) const;
+  void right_unsafe(TransitionState& state, const unsigned& deprel) const;
 
   static bool is_shift(const unsigned& action);
   static bool is_left(const unsigned& action);

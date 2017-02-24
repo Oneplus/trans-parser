@@ -28,7 +28,11 @@ Swap::Swap(const Alphabet & map,
   }
 }
 
-std::string Swap::name(unsigned id) const {
+std::string Swap::system_name() const {
+  return "swap";
+}
+
+std::string Swap::action_name(unsigned id) const {
   BOOST_ASSERT_MSG(id < action_names.size(), "id in illegal range");
   return action_names[id];
 }
@@ -37,7 +41,7 @@ unsigned Swap::num_actions() const { return n_actions; }
 
 unsigned Swap::num_deprels() const { return deprel_map.size(); }
 
-void Swap::get_transition_costs(const State & state,
+void Swap::get_transition_costs(const TransitionState & state,
                                 const std::vector<unsigned>& actions,
                                 const std::vector<unsigned>& ref_heads,
                                 const std::vector<unsigned>& ref_deprels,
@@ -45,7 +49,7 @@ void Swap::get_transition_costs(const State & state,
   BOOST_ASSERT_MSG(false, "Inefficient to define dynamic oracle for SWAP system");
 }
 
-void Swap::perform_action(State & state, const unsigned & action) {
+void Swap::perform_action(TransitionState & state, const unsigned & action) {
   if (is_shift(action)) {
     shift_unsafe(state);
   } else if (is_swap(action)) {
@@ -282,26 +286,26 @@ void Swap::get_oracle_actions_onestep_improved(const std::vector<unsigned>& ref_
   }
 }
 
-void Swap::shift_unsafe(State & state) const {
+void Swap::shift_unsafe(TransitionState & state) const {
   state.stack.push_back(state.buffer.back());
   state.buffer.pop_back();
 }
 
-void Swap::swap_unsafe(State & state) const {
+void Swap::swap_unsafe(TransitionState & state) const {
   unsigned j = state.stack.back(); state.stack.pop_back();
   unsigned i = state.stack.back(); state.stack.pop_back();
   state.stack.push_back(j);
   state.buffer.push_back(i);
 }
 
-void Swap::left_unsafe(State & state, const unsigned & deprel) const {
+void Swap::left_unsafe(TransitionState & state, const unsigned & deprel) const {
   unsigned hed = state.stack.back(); state.stack.pop_back();
   unsigned mod = state.stack.back(); state.stack.back() = hed;
   state.heads[mod] = hed;
   state.deprels[mod] = deprel;
 }
 
-void Swap::right_unsafe(State & state, const unsigned & deprel) const {
+void Swap::right_unsafe(TransitionState & state, const unsigned & deprel) const {
   unsigned mod = state.stack.back(); state.stack.pop_back();
   unsigned hed = state.stack.back();
   state.heads[mod] = hed;
@@ -323,7 +327,7 @@ unsigned Swap::parse_label(const unsigned & action) const {
   return (action % 2 == 0 ? (action - 2) / 2 : (action - 3) / 2);
 }
 
-void Swap::get_valid_actions(const State & state,
+void Swap::get_valid_actions(const TransitionState & state,
                              std::vector<unsigned>& valid_actions) {
   valid_actions.clear();
   for (unsigned a = 0; a < n_actions; ++a) {
@@ -334,7 +338,7 @@ void Swap::get_valid_actions(const State & state,
   BOOST_ASSERT_MSG(valid_actions.size() > 0, "There should be one or more valid action.");
 }
 
-bool Swap::is_valid_action(const State& state, const unsigned& act) const {
+bool Swap::is_valid_action(const TransitionState& state, const unsigned& act) const {
   bool is_shift = (act == 0);
   bool is_swap = (act == 1);
   bool is_reduce = (!is_shift && !is_swap);

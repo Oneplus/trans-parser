@@ -29,7 +29,11 @@ ArcHybrid::ArcHybrid(const Alphabet& map,
   }
 }
 
-std::string ArcHybrid::name(unsigned id) const {
+std::string ArcHybrid::system_name() const {
+  return "archybrid";
+}
+
+std::string ArcHybrid::action_name(unsigned id) const {
   BOOST_ASSERT_MSG(id < action_names.size(), "id in illegal range");
   return action_names[id];
 }
@@ -38,12 +42,12 @@ unsigned ArcHybrid::num_actions() const { return n_actions; }
 
 unsigned ArcHybrid::num_deprels() const { return deprel_map.size(); }
 
-void ArcHybrid::shift_unsafe(State& state) const {
+void ArcHybrid::shift_unsafe(TransitionState& state) const {
   state.stack.push_back(state.buffer.back());
   state.buffer.pop_back();
 }
 
-void ArcHybrid::left_unsafe(State& state, const unsigned& deprel) const {
+void ArcHybrid::left_unsafe(TransitionState& state, const unsigned& deprel) const {
   unsigned hed = state.buffer.back();
   unsigned mod = state.stack.back();
   state.stack.pop_back();
@@ -51,7 +55,7 @@ void ArcHybrid::left_unsafe(State& state, const unsigned& deprel) const {
   state.deprels[mod] = deprel;
 }
 
-void ArcHybrid::right_unsafe(State& state, const unsigned& deprel) const {
+void ArcHybrid::right_unsafe(TransitionState& state, const unsigned& deprel) const {
   unsigned mod = state.stack.back();
   state.stack.pop_back();
   unsigned hed = state.stack.back();
@@ -59,7 +63,7 @@ void ArcHybrid::right_unsafe(State& state, const unsigned& deprel) const {
   state.deprels[mod] = deprel;
 }
 
-float ArcHybrid::shift_dynamic_loss_unsafe(State& state,
+float ArcHybrid::shift_dynamic_loss_unsafe(TransitionState& state,
                                            const std::vector<unsigned>& ref_heads,
                                            const std::vector<unsigned>& ref_deprels) const {
   float c = 0.;
@@ -85,7 +89,7 @@ float ArcHybrid::shift_dynamic_loss_unsafe(State& state,
   return c;
 }
 
-float ArcHybrid::left_dynamic_loss_unsafe(State& state,
+float ArcHybrid::left_dynamic_loss_unsafe(TransitionState& state,
                                           const unsigned& deprel,
                                           const std::vector<unsigned>& ref_heads,
                                           const std::vector<unsigned>& ref_deprels) const {
@@ -114,7 +118,7 @@ float ArcHybrid::left_dynamic_loss_unsafe(State& state,
   return c;
 }
 
-float ArcHybrid::right_dynamic_loss_unsafe(State& state,
+float ArcHybrid::right_dynamic_loss_unsafe(TransitionState& state,
                                            const unsigned& deprel,
                                            const std::vector<unsigned>& ref_heads,
                                            const std::vector<unsigned>& ref_deprels) const {
@@ -132,7 +136,7 @@ float ArcHybrid::right_dynamic_loss_unsafe(State& state,
   return c;
 }
 
-void ArcHybrid::get_transition_costs(const State & state,
+void ArcHybrid::get_transition_costs(const TransitionState & state,
                                      const std::vector<unsigned>& actions,
                                      const std::vector<unsigned>& ref_heads,
                                      const std::vector<unsigned>& ref_deprels,
@@ -142,7 +146,7 @@ void ArcHybrid::get_transition_costs(const State & state,
   costs.clear();
 
   for (unsigned act : actions) {
-    State next_state(state);
+    TransitionState next_state(state);
     if (is_shift(act)) {
       costs.push_back(-shift_dynamic_loss_unsafe(next_state, ref_heads, ref_deprels));
     } else if (is_left(act)) {
@@ -172,7 +176,7 @@ void ArcHybrid::get_transition_costs(const State & state,
   }
 }
 
-void ArcHybrid::perform_action(State & state, const unsigned& action) {
+void ArcHybrid::perform_action(TransitionState & state, const unsigned& action) {
   if (is_shift(action)) {
     shift_unsafe(state);
   } else if (is_left(action)) {
@@ -190,7 +194,7 @@ bool ArcHybrid::is_shift(const unsigned & action) { return action == 0; }
 bool ArcHybrid::is_left(const unsigned & action)  { return (action > 0 && action % 2 == 1); }
 bool ArcHybrid::is_right(const unsigned & action) { return (action > 0 && action % 2 == 0); }
 
-bool ArcHybrid::is_valid_action(const State& state, const unsigned& act) const {
+bool ArcHybrid::is_valid_action(const TransitionState& state, const unsigned& act) const {
   if (is_shift(act)) {
     if (state.buffer.size() == 2 && state.stack.size() > 1) { return false; }
   } else if (is_left(act)) {
@@ -208,7 +212,7 @@ bool ArcHybrid::is_valid_action(const State& state, const unsigned& act) const {
   return true;
 }
 
-void ArcHybrid::get_valid_actions(const State& state, std::vector<unsigned>& valid_actions) {
+void ArcHybrid::get_valid_actions(const TransitionState& state, std::vector<unsigned>& valid_actions) {
   valid_actions.clear();
   for (unsigned a = 0; a < n_actions; ++a) {
     if (!is_valid_action(state, a)) { continue; }
