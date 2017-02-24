@@ -135,4 +135,16 @@ struct Ballesteros15ParserState : public ParserState {
   dynet::expr::Expression get_scores() override;
 };
 
+struct Ballesteros15ParserStateBuilder : public ParserStateBuilder {
+  Ballesteros15ParserModel * parser_model;
+
+  Ballesteros15ParserStateBuilder(const po::variables_map & conf,
+                                  dynet::Model & model,
+                                  TransitionSystem & system,
+                                  const Corpus & corpus,
+                                  const Embeddings & pretrained);
+
+  ParserState * build() override;
+};
+
 #endif  //  end for PARSER_H

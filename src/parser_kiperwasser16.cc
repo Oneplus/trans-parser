@@ -200,3 +200,28 @@ dynet::expr::Expression Kiperwasser16ParserState::get_scores() {
   return model.scorer.get_output(
     dynet::expr::tanh(model.merge.get_output(f0, f1, f2, f3)));
 }
+
+Kiperwasser16ParserStateBuilder::Kiperwasser16ParserStateBuilder(const po::variables_map & conf,
+                                                                 dynet::Model & model,
+                                                                 TransitionSystem & system,
+                                                                 const Corpus & corpus,
+                                                                 const Embeddings & pretrained) :
+  ParserStateBuilder(model, system) {
+  parser_model = new Kiperwasser16ParserModel(model,
+                                              corpus.training_vocab.size() + 10,
+                                              conf["word_dim"].as<unsigned>(),
+                                              corpus.pos_map.size() + 10,
+                                              conf["pos_dim"].as<unsigned>(),
+                                              corpus.norm_map.size() + 1,
+                                              conf["pretrained_dim"].as<unsigned>(),
+                                              system.num_actions(),
+                                              conf["layers"].as<unsigned>(),
+                                              conf["lstm_input_dim"].as<unsigned>(),
+                                              conf["hidden_dim"].as<unsigned>(),
+                                              system,
+                                              pretrained);
+}
+
+ParserState * Kiperwasser16ParserStateBuilder::build() {
+  return new Kiperwasser16ParserState(*parser_model);
+}

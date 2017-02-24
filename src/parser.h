@@ -42,4 +42,14 @@ struct ParserState {
   virtual dynet::expr::Expression get_scores() = 0;
 };
 
+struct ParserStateBuilder {
+  dynet::Model & model;
+  TransitionSystem & system;
+
+  ParserStateBuilder(dynet::Model & model,
+                     TransitionSystem & system) : model(model), system(system) {}
+
+  virtual ParserState * build() = 0;
+};
+
 #endif  //  end for PARSER_H

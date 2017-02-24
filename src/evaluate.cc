@@ -8,7 +8,7 @@ float evaluate(const po::variables_map & conf,
                Corpus & corpus,
                ParserStateBuilder & state_builder,
                const std::string & output) {
-  TransitionSystem & system = state_builder.parser_model->get_system();
+  TransitionSystem & system = state_builder.system;
   auto t_start = std::chrono::high_resolution_clock::now();
   unsigned kUNK = corpus.get_or_add_word(Corpus::UNK);
   std::ofstream ofs(output);
@@ -76,7 +76,7 @@ float beam_search(const po::variables_map & conf,
                   ParserStateBuilder & state_builder,
                   const std::string & output) {
   typedef std::tuple<unsigned, unsigned, float> Transition;
-  TransitionSystem & system = state_builder.parser_model->get_system();
+  TransitionSystem & system = state_builder.system;
 
   auto t_start = std::chrono::high_resolution_clock::now();
   unsigned kUNK = corpus.get_or_add_word(Corpus::UNK);

@@ -383,3 +383,31 @@ dynet::expr::Expression Ballesteros15ParserState::get_scores() {
     model.a_lstm.get_h(a_pointer).back())
   ));
 }
+
+Ballesteros15ParserStateBuilder::Ballesteros15ParserStateBuilder(const po::variables_map & conf,
+                                                                 dynet::Model & model,
+                                                                 TransitionSystem & system,
+                                                                 const Corpus & corpus,
+                                                                 const Embeddings & pretrained) : 
+  ParserStateBuilder(model, system) {
+  parser_model = new Ballesteros15ParserModel(model,
+                                              corpus.char_map.size() + 10,
+                                              conf["char_dim"].as<unsigned>(),
+                                              conf["word_dim"].as<unsigned>(),
+                                              corpus.pos_map.size() + 10,
+                                              conf["pos_dim"].as<unsigned>(),
+                                              corpus.norm_map.size() + 1,
+                                              conf["pretrained_dim"].as<unsigned>(),
+                                              system.num_actions(),
+                                              conf["action_dim"].as<unsigned>(),
+                                              conf["label_dim"].as<unsigned>(),
+                                              conf["layers"].as<unsigned>(),
+                                              conf["lstm_input_dim"].as<unsigned>(),
+                                              conf["hidden_dim"].as<unsigned>(),
+                                              system,
+                                              pretrained);
+}
+
+ParserState * Ballesteros15ParserStateBuilder::build() {
+  return new Ballesteros15ParserState(*parser_model);
+}

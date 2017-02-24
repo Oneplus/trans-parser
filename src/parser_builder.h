@@ -9,20 +9,10 @@
 
 namespace po = boost::program_options;
 
-struct ParserStateBuilder {
-  enum PARSER_ID { kDyer15, kBallesteros15, kKiperwasser16 };
-  PARSER_ID parser_id;
+ParserStateBuilder * get_state_builder(const po::variables_map & conf,
+                                       dynet::Model & model,
+                                       TransitionSystem & system,
+                                       const Corpus & corpus,
+                                       const Embeddings & pretrained);
 
-  dynet::Model & model;
-  ParserModel * parser_model;
-  static po::options_description get_options();
-
-  ParserStateBuilder(const po::variables_map & conf,
-                     dynet::Model & model,
-                     TransitionSystem & system,
-                     const Corpus & corpus,
-                     const Embeddings & pretrained);
-
-  ParserState* build();
-};
 #endif  //  end for PARSER_BUILDER_H

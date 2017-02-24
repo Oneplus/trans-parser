@@ -125,4 +125,16 @@ struct Dyer15ParserState : public ParserState {
   dynet::expr::Expression get_scores() override;
 };
 
+struct Dyer15ParserStateBuilder : public ParserStateBuilder {
+  Dyer15ParserModel * parser_model;
+
+  Dyer15ParserStateBuilder(const po::variables_map & conf,
+                           dynet::Model & model,
+                           TransitionSystem & system,
+                           const Corpus & corpus,
+                           const Embeddings & pretrained);
+
+  ParserState * build() override;
+};
+
 #endif  //  end for PARSER_H

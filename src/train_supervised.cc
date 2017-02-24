@@ -137,7 +137,7 @@ void SupervisedTrainer::add_loss_one_step(dynet::expr::Expression & score_expr,
                                           const unsigned & worst_gold_action,
                                           const unsigned & best_non_gold_action,
                                           std::vector<dynet::expr::Expression> & loss) {
-  TransitionSystem & system = state_builder.parser_model->get_system();
+  TransitionSystem & system = state_builder.system;
   unsigned illegal_action = system.num_actions();
 
   if (objective_type == kCrossEntropy) {
@@ -163,7 +163,7 @@ float SupervisedTrainer::train_full_tree(const InputUnits& input_units,
                                          const ParseUnits& parse_units,
                                          dynet::Trainer* trainer,
                                          unsigned iter) {
-  TransitionSystem & system = state_builder.parser_model->get_system();
+  TransitionSystem & system = state_builder.system;
 
   std::vector<unsigned> ref_heads, ref_deprels;
   parse_to_vector(parse_units, ref_heads, ref_deprels);
@@ -258,7 +258,7 @@ float SupervisedTrainer::train_structure_full_tree(const InputUnits & input_unit
                                                    unsigned beam_size,
                                                    unsigned iter) {
   typedef std::tuple<unsigned, unsigned, float, dynet::expr::Expression> Transition;
-  TransitionSystem & system = state_builder.parser_model->get_system();
+  TransitionSystem & system = state_builder.system;
 
   std::vector<unsigned> ref_heads, ref_deprels, gold_actions;
   parse_to_vector(parse_units, ref_heads, ref_deprels);
@@ -367,7 +367,7 @@ float SupervisedTrainer::train_partial_tree(const InputUnits& input_units,
                                             const ParseUnits& parse_units,
                                             dynet::Trainer* trainer,
                                             unsigned iter) {
-  TransitionSystem & system = state_builder.parser_model->get_system();
+  TransitionSystem & system = state_builder.system;
   
   std::vector<unsigned> ref_heads, ref_deprels;
   parse_to_vector(parse_units, ref_heads, ref_deprels);

@@ -63,7 +63,7 @@ struct Kiperwasser16ParserState : public ParserState {
   struct FeatureExtractor {
     Kiperwasser16ParserState * hook;
     FeatureExtractor(Kiperwasser16ParserState * hook) : hook(hook) {}
-    ~FeatureExtractor() {}
+    virtual ~FeatureExtractor() {}
     // should do after sys.perform_action
     virtual void extract(const TransitionState & state) = 0;
   };
@@ -109,5 +109,18 @@ struct Kiperwasser16ParserState : public ParserState {
 
   dynet::expr::Expression get_scores() override;
 };
+
+struct Kiperwasser16ParserStateBuilder : public ParserStateBuilder {
+  Kiperwasser16ParserModel * parser_model;
+
+  Kiperwasser16ParserStateBuilder(const po::variables_map & conf,
+                                  dynet::Model & model,
+                                  TransitionSystem & system,
+                                  const Corpus & corpus,
+                                  const Embeddings & pretrained);
+
+  ParserState * build() override;
+};
+
 
 #endif  //  end for PARSER_BILSTM_H

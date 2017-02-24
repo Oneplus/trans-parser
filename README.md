@@ -144,5 +144,27 @@ Commands:
 
 | Arch | Sys. | Noise | Oracle | L2 | Dev.UAS | Test.UAS | Test.LAS |
 |-----|-------|------|-------|----|-----|----|----|
-| D15 | arcstd |         | |
-
+| d15 | archyb | none | static | 1e-5 | 93.06 | 92.78 | 90.63 |
+| d15 | archyb | none | static | 1e-6 | 93.41 | 92.99 | 90.86 |
+| d15 | archyb | singleton | static | 1e-5 | 93.04 | 92.78 | 90.74 |
+| d15 | archyb | singleton | static | 1e-6 | 93.49 | 93.08 | 90.88 |
+| d15 | archyb | word | static | 1e-5 | 93.26 | 92.75 | 90.61 |
+| d15 | archyb | word | static | 1e-6 | 93.45 | 93.10 | 91.05 |
+| d15 | arcstd | none | static | 1e-5 | 93.10 | 92.59 | 90.45 |
+| d15 | arcstd | none | static | 1e-6 | 93.24 | 92.93 | 90.72 |
+| d15 | arcstd | singleton | static | 1e-5 | 93.08 | 92.70 | 90.63 |
+| d15 | arcstd | singleton | static | 1e-6 | 93.39 | 93.20 | 91.09 |
+| d15 | arcstd | word | static | 1e-5 | 93.03 | 92.80 | 90.65 |
+| d15 | arcstd | word | static | 1e-6 | 93.25 | 92.90 | 90.67 |
+| d15 | archyb | none | dynamic | 1e-5 | 93.11 | 93.01 | 90.84 |
+| d15 | archyb | none | dynamic | 1e-6 | 93.54 | 93.38 | 91.19 |
+| d15 | archyb | singleton | dynamic | 1e-5 | 93.13 | 92.61 | 90.46 |
+| d15 | archyb | singleton | dynamic | 1e-6 | 93.55 | 93.12 | 91.02 |
+| d15 | archyb | word | dynamic | 1e-5 | 93.14 | 92.72 | 90.63 |
+| d15 | archyb | word | dynamic | 1e-6 | 93.74 | 93.09 | 90.96 |
+| d15 | arcstd | none | dynamic | 1e-5 | 93.05 | 92.75 | 90.65 |
+| d15 | arcstd | none | dynamic | 1e-6 | 93.64 | 93.49 | 91.42 |
+| d15 | arcstd | singleton | dynamic | 1e-5 | 93.13 | 92.48 | 90.38 |
+| d15 | arcstd | singleton | dynamic | 1e-6 | 93.71 | 93.52 | 91.43 |
+| d15 | arcstd | word | dynamic | 1e-5 | 93.14 | 92.89 | 90.88 |
+| d15 | arcstd | word | dynamic | 1e-6 | 93.60 | 93.31 | 91.31 |

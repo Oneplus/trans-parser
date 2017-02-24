@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
   bool allow_non_projective = TransitionSystemBuilder::allow_nonprojective(conf);
 
   Noisifier noisifier(conf, corpus);
-  ParserStateBuilder state_builder = ParserStateBuilder(conf, model, (*sys), corpus, pretrained);
+  ParserStateBuilder * state_builder = get_state_builder(conf, model, (*sys), corpus, pretrained);
 
   corpus.load_devel_data(conf["devel_data"].as<std::string>(), allow_partial_tree);
   _INFO << "Main:: after loading development data, size(vocabulary)=" << corpus.word_map.size();
@@ -137,7 +137,7 @@ int main(int argc, char** argv) {
   _INFO << "Main:: write tmp file to: " << output;
 
   if (conf.count("train")) {
-    SupervisedTrainer trainer(conf, noisifier, state_builder);
+    SupervisedTrainer trainer(conf, noisifier, *state_builder);
     trainer.train(conf, corpus, model_name, output, allow_non_projective, allow_partial_tree);
   }
 
@@ -146,9 +146,9 @@ int main(int argc, char** argv) {
   dynet::load_dynet_model(model_name, (&model));
 
   if (conf.count("beam_size") && conf["beam_size"].as<unsigned>() > 1) {
-    beam_search(conf, corpus, state_builder, output);
+    beam_search(conf, corpus, *state_builder, output);
   } else {
-    evaluate(conf, corpus, state_builder, output);
+    evaluate(conf, corpus, *state_builder, output);
   }
   return 0;
 }
