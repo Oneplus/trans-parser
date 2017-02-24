@@ -14,9 +14,9 @@ ParserStateBuilder * get_state_builder(const po::variables_map & conf,
   if (arch_name == "dyer15" || arch_name == "d15") {
     builder = new Dyer15ParserStateBuilder(conf, model, system, corpus, pretrained);
   } else if (arch_name == "ballesteros15" || arch_name == "b15") {
-    builder = new Dyer15ParserStateBuilder(conf, model, system, corpus, pretrained);
+    builder = new Ballesteros15ParserStateBuilder(conf, model, system, corpus, pretrained);
   } else if (arch_name == "kiperwasser16" || arch_name == "k16") {
-    builder = new Dyer15ParserStateBuilder(conf, model, system, corpus, pretrained);
+    builder = new Kiperwasser16ParserStateBuilder(conf, model, system, corpus, pretrained);
   } else {
     _ERROR << "Main:: Unknown architecture name: " << arch_name;
     exit(1);
