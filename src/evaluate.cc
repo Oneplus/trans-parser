@@ -135,10 +135,10 @@ float beam_search(const po::variables_map & conf,
         unsigned cursor = std::get<0>(transitions[i]);
         unsigned action = std::get<1>(transitions[i]);
         float new_score = std::get<2>(transitions[i]);
-        TransitionState & transition_state = transition_states[cursor];
 
+        TransitionState & transition_state = transition_states[cursor];
         TransitionState new_transition_state(transition_state);
-        ParserState * parser_state = parser_states[i];
+        ParserState * parser_state = parser_states[cursor];
         ParserState * new_parser_state = parser_state->copy();
 
         if (action != system.num_actions()) {

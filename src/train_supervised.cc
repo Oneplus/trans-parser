@@ -321,9 +321,8 @@ float SupervisedTrainer::train_structure_full_tree(const InputUnits & input_unit
       float new_score = std::get<2>(transitions[i]);
       dynet::expr::Expression new_score_expr = std::get<3>(transitions[i]);
       TransitionState & transition_state = transition_states[cursor];
-
       TransitionState new_transition_state(transition_state);
-      ParserState * parser_state = parser_states[i];
+      ParserState * parser_state = parser_states[cursor];
       ParserState * new_parser_state = parser_state->copy();
       if (action != system.num_actions()) {
         system.perform_action(new_transition_state, action);
