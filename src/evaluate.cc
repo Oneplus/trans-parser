@@ -74,14 +74,14 @@ float evaluate(const po::variables_map & conf,
 float beam_search(const po::variables_map & conf,
                   Corpus & corpus,
                   ParserStateBuilder & state_builder,
-                  const std::string & output) {
+                  const std::string & output,
+                  bool structure) {
   typedef std::tuple<unsigned, unsigned, float> Transition;
   TransitionSystem & system = state_builder.system;
 
   auto t_start = std::chrono::high_resolution_clock::now();
   unsigned kUNK = corpus.get_or_add_word(Corpus::UNK);
   unsigned beam_size = conf["beam_size"].as<unsigned>();
-  bool structure = (conf["supervised_objective"].as<std::string>() == "structure");
 
   std::ofstream ofs(output);
   for (unsigned sid = 0; sid < corpus.n_devel; ++sid) {

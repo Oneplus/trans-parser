@@ -76,7 +76,6 @@ void SupervisedTrainer::train(const po::variables_map& conf,
   unsigned evaluate_stops = conf["evaluate_stops"].as<unsigned>();
   unsigned evaluate_skips = conf["evaluate_skips"].as<unsigned>();
   unsigned beam_size = (conf.count("beam_size") ? conf["beam_size"].as<unsigned>() : 0);
-  bool use_beam_search = (beam_size > 1);
   unsigned pretrain_iter = UINT_MAX;
   if (objective_type == kStructure) {
     pretrain_iter = conf["supervised_pretrain_iter"].as<unsigned>();
@@ -84,6 +83,7 @@ void SupervisedTrainer::train(const po::variables_map& conf,
   _INFO << "SUP:: will stop after " << max_iter << " iterations.";
   for (unsigned iter = 0; iter < max_iter; ++iter) {
     llh = 0;
+    bool structure_learn = (objective_type == kStructure && iter >= pretrain_iter);
     _INFO << "SUP:: start training iteration #" << iter << ", shuffled.";
     std::shuffle(order.begin(), order.end(), (*dynet::rndeng));
 
@@ -94,7 +94,7 @@ void SupervisedTrainer::train(const po::variables_map& conf,
       noisifier.noisify(input_units);
       float lp;
       if (!allow_partial_tree) {
-        if (objective_type == kStructure && iter >= pretrain_iter) {
+        if (structure_learn) {
           lp = train_structure_full_tree(input_units, parse_units, trainer, beam_size, iter);
         } else {
           lp = train_full_tree(input_units, parse_units, trainer, iter);
@@ -114,7 +114,9 @@ void SupervisedTrainer::train(const po::variables_map& conf,
         llh_in_batch = 0.f;
       }
       if (iter >= evaluate_skips && logc % evaluate_stops == 0) {
-        float f = (use_beam_search ? beam_search(conf, corpus, state_builder, output) : evaluate(conf, corpus, state_builder, output));
+        float f = (beam_size > 1 ? 
+                   beam_search(conf, corpus, state_builder, output, structure_learn) :
+                   evaluate(conf, corpus, state_builder, output));
         if (f > best_f) {
           best_f = f;
           _INFO << "SUP:: new best record achieved: " << best_f << ", saved.";
@@ -124,7 +126,9 @@ void SupervisedTrainer::train(const po::variables_map& conf,
     }
 
     _INFO << "SUP:: end of iter #" << iter << " loss " << llh;
-    float f = (use_beam_search ? beam_search(conf, corpus, state_builder, output) : evaluate(conf, corpus, state_builder, output));
+    float f = (beam_size > 1 ? 
+               beam_search(conf, corpus, state_builder, output, structure_learn) :
+               evaluate(conf, corpus, state_builder, output));
     if (f > best_f) {
       best_f = f;
       _INFO << "SUP:: new best record achieved: " << best_f << ", saved.";
@@ -281,6 +285,7 @@ float SupervisedTrainer::train_structure_full_tree(const InputUnits & input_unit
   transition_states[0].initialize(input_units);
 
   parser_states.push_back(state_builder.build());
+  parser_states[0]->new_graph(cg);
   parser_states[0]->initialize(cg, input_units);
 
   scores.push_back(0.);

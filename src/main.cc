@@ -146,7 +146,8 @@ int main(int argc, char** argv) {
   dynet::load_dynet_model(model_name, (&model));
 
   if (conf.count("beam_size") && conf["beam_size"].as<unsigned>() > 1) {
-    beam_search(conf, corpus, *state_builder, output);
+    bool structure_test = (conf["supervised_objective"].as<std::string>() == "structure");
+    beam_search(conf, corpus, *state_builder, output, structure_test);
   } else {
     evaluate(conf, corpus, *state_builder, output);
   }

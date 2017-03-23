@@ -17,6 +17,7 @@ float evaluate(const po::variables_map & conf,
 float beam_search(const po::variables_map & conf,
                   Corpus & corpus,
                   ParserStateBuilder & state_builder,
-                  const std::string & output);
+                  const std::string & output,
+                  bool structure);
 
 #endif  //  end for EVALUATE_H
