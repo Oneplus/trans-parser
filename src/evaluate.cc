@@ -92,10 +92,8 @@ float beam_search(const po::variables_map & conf,
       if (!corpus.training_vocab.count(u.wid)) { u.wid = kUNK; }
     }
 
-    std::vector<ParseUnits> results;
     std::vector<TransitionState> transition_states;
     std::vector<float> scores;
-    std::vector<Expression> scores_exprs;
     std::vector<ParserState *> parser_states;
 
     parser_states.push_back(state_builder.build());
@@ -107,6 +105,8 @@ float beam_search(const po::variables_map & conf,
     transition_states.push_back(TransitionState(len));
     transition_states[0].initialize(input_units);
     
+    scores.push_back(0.);
+
     unsigned curr = 0, next = 1;
     while (!transition_states[curr].terminated()) {
       std::vector<Transition> transitions;
@@ -158,8 +158,10 @@ float beam_search(const po::variables_map & conf,
     }
 
     for (InputUnit& u : input_units) { u.wid = u.aux_wid; }
+    
+    ParseUnits result; 
+    vector_to_parse(transition_states[curr].heads, transition_states[curr].deprels, result);
 
-    ParseUnits & result = results[0];
     for (unsigned i = 0; i < len - 1; ++i) {
       ofs << i + 1 << "\t"                //  id
         << input_units[i].w_str << "\t"   //  form
