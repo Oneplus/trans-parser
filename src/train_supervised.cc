@@ -11,6 +11,7 @@ po::options_description SupervisedTrainer::get_options() {
     ("supervised_objective", po::value<std::string>()->default_value("crossentropy"), "The learning objective [crossentropy|rank|bipartie_rank|structure]")
     ("supervised_do_pretrain_iter", po::value<unsigned>()->default_value(1), "The number of pretrain iteration on dynamic oracle.")
     ("supervised_do_explore_prob", po::value<float>()->default_value(0.9), "The probability of exploration.")
+    ("supervised_pretrain_iter", po::value<unsigned>()->default_value(5), "The number of iteration with greedy parser pretraining, only used when objective is `structure`.")
     ;
   return cmd;
 }
@@ -76,6 +77,10 @@ void SupervisedTrainer::train(const po::variables_map& conf,
   unsigned evaluate_skips = conf["evaluate_skips"].as<unsigned>();
   unsigned beam_size = (conf.count("beam_size") ? conf["beam_size"].as<unsigned>() : 0);
   bool use_beam_search = (beam_size > 1);
+  unsigned pretrain_iter = UINT_MAX;
+  if (objective_type == kStructure) {
+    pretrain_iter = conf["supervised_pretrain_iter"].as<unsigned>();
+  }
   _INFO << "SUP:: will stop after " << max_iter << " iterations.";
   for (unsigned iter = 0; iter < max_iter; ++iter) {
     llh = 0;
@@ -89,7 +94,7 @@ void SupervisedTrainer::train(const po::variables_map& conf,
       noisifier.noisify(input_units);
       float lp;
       if (!allow_partial_tree) {
-        if (objective_type == kStructure) {
+        if (objective_type == kStructure && iter >= pretrain_iter) {
           lp = train_structure_full_tree(input_units, parse_units, trainer, beam_size, iter);
         } else {
           lp = train_full_tree(input_units, parse_units, trainer, iter);
