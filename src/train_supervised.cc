@@ -145,7 +145,7 @@ void SupervisedTrainer::add_loss_one_step(dynet::expr::Expression & score_expr,
   TransitionSystem & system = state_builder.system;
   unsigned illegal_action = system.num_actions();
 
-  if (objective_type == kCrossEntropy) {
+  if (objective_type == kCrossEntropy || objective_type == kStructure /* in pretrain model. */) {
     loss.push_back(dynet::expr::pickneglogsoftmax(score_expr, best_gold_action));
   } else if (objective_type == kRank) {
     if (best_gold_action != illegal_action && best_non_gold_action != illegal_action) {
