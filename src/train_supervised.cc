@@ -244,7 +244,7 @@ float SupervisedTrainer::train_full_tree(const InputUnits& input_units,
   float ret = 0.;
   if (loss.size() > 0) {
     dynet::expr::Expression l = dynet::expr::sum(loss);
-    ret = dynet::as_scalar(cg.forward(l));
+    ret = dynet::as_scalar(cg.incremental_forward(l));
     cg.backward(l);
     trainer->update(1.f);
   }
@@ -431,7 +431,7 @@ float SupervisedTrainer::train_partial_tree(const InputUnits& input_units,
   float ret = 0.f;
   if (loss.size() > 0) {
     dynet::expr::Expression l = dynet::expr::sum(loss);
-    ret = dynet::as_scalar(cg.forward(l));
+    ret = dynet::as_scalar(cg.incremental_forward(l));
     cg.backward(l);
     trainer->update(1.f);
   }
