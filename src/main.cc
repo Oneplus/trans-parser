@@ -17,7 +17,7 @@
 namespace po = boost::program_options;
 
 void init_command_line(int argc, char* argv[], po::variables_map& conf) {
-  po::options_description general("Dependency Parser with Q-Learning.");
+  po::options_description general("Transition-based dependency parser.");
   general.add_options()
     ("train,t", "Use to specify to perform training.")
     ("architecture", po::value<std::string>()->default_value("d15"), "The architecture [dyer15, ballesteros15, kiperwasser16].")

@@ -361,7 +361,7 @@ float SupervisedTrainer::train_structure_full_tree(const InputUnits & input_unit
   }
   dynet::expr::Expression l =
     dynet::expr::pickneglogsoftmax(dynet::expr::concatenate(loss), corr - curr);
-  float ret = dynet::as_scalar(cg.forward(l));
+  float ret = dynet::as_scalar(cg.incremental_forward(l));
   cg.backward(l);
   trainer->update(1.f);
   return ret;
