@@ -68,6 +68,8 @@ struct Ballesteros15ParserModel : public ParserModel {
                            const Embeddings & pretrained);
 
   void new_graph(dynet::ComputationGraph & cg) override;
+
+  std::vector<dynet::expr::Expression> get_params() override;
 };
 
 struct Ballesteros15ParserState : public ParserState {
@@ -133,6 +135,8 @@ struct Ballesteros15ParserState : public ParserState {
 
   /// Get the un-softmaxed scores from the LSTM-parser.
   dynet::expr::Expression get_scores() override;
+
+  std::vector<dynet::expr::Expression> get_params() override;
 };
 
 struct Ballesteros15ParserStateBuilder : public ParserStateBuilder {

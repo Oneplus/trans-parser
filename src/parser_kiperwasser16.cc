@@ -52,6 +52,19 @@ void Kiperwasser16ParserModel::new_graph(dynet::ComputationGraph & cg) {
   empty = dynet::expr::parameter(cg, p_empty);
 }
 
+std::vector<dynet::expr::Expression> Kiperwasser16ParserModel::get_params() {
+  std::vector<dynet::expr::Expression> ret;
+  for (auto & layer : fwd_lstm.param_vars) { for (auto & e : layer) { ret.push_back(e); } }
+  for (auto & layer : bwd_lstm.param_vars) { for (auto & e : layer) { ret.push_back(e); } }
+  for (auto & e : merge_input.get_params()) { ret.push_back(e); }
+  for (auto & e : merge.get_params()) { ret.push_back(e); }
+  for (auto & e : scorer.get_params()) { ret.push_back(e); }
+  ret.push_back(empty);
+  ret.push_back(fwd_guard);
+  ret.push_back(bwd_guard);
+  return ret;
+}
+
 void Kiperwasser16ParserState::ArcEagerExtractor::extract(const TransitionState & state) {
   dynet::expr::Expression & empty = hook->model.empty;
   dynet::expr::Expression & f0 = hook->f0;
@@ -199,6 +212,10 @@ ParserState * Kiperwasser16ParserState::copy() {
 dynet::expr::Expression Kiperwasser16ParserState::get_scores() {
   return model.scorer.get_output(
     dynet::expr::tanh(model.merge.get_output(f0, f1, f2, f3)));
+}
+
+std::vector<dynet::expr::Expression> Kiperwasser16ParserState::get_params() {
+  return model.get_params();
 }
 
 Kiperwasser16ParserStateBuilder::Kiperwasser16ParserStateBuilder(const po::variables_map & conf,

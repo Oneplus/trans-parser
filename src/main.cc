@@ -111,9 +111,6 @@ int main(int argc, char** argv) {
   _INFO << "Main:: after loading pretrained embedding, size(vocabulary)=" << corpus.word_map.size();
 
   dynet::Model model;
-  model.set_weight_decay_lambda(conf["lambda"].as<float>());
-  _INFO << "Main:: l2 regularizer is " << conf["lambda"].as<float>();
-
   TransitionSystem* sys = TransitionSystemBuilder(corpus).build(conf);
   bool allow_non_projective = TransitionSystemBuilder::allow_nonprojective(conf);
 

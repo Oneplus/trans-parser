@@ -21,6 +21,9 @@ SupervisedTrainer::SupervisedTrainer(const po::variables_map& conf,
                                      ParserStateBuilder & state_builder) :
   state_builder(state_builder),
   noisifier(noisifier) {
+  lambda_ = conf["lambda"].as<float>();
+  _INFO << "SUP:: lambda = " << lambda_;
+
   if (conf["supervised_oracle"].as<std::string>() == "static") {
     oracle_type = kStatic;
   } else if (conf["supervised_oracle"].as<std::string>() == "dynamic") {
@@ -252,7 +255,10 @@ float SupervisedTrainer::train_full_tree(const InputUnits& input_units,
   }
   float ret = 0.;
   if (loss.size() > 0) {
-    dynet::expr::Expression l = dynet::expr::sum(loss);
+    std::vector<dynet::expr::Expression> all_params = parser_state->get_params();
+    std::vector<dynet::expr::Expression> reg;
+    for (auto e : all_params) { reg.push_back(dynet::expr::squared_norm(e)); }
+    dynet::expr::Expression l = dynet::expr::sum(loss) + 0.5 * loss.size() * lambda_ * dynet::expr::sum(reg);
     ret = dynet::as_scalar(cg.incremental_forward(l));
     cg.backward(l);
     trainer->update(1.f);
@@ -358,17 +364,20 @@ float SupervisedTrainer::train_structure_full_tree(const InputUnits & input_unit
     }
   }
 
-  for (ParserState * parser_state : parser_states) { delete parser_state; }
-
   std::vector<dynet::expr::Expression> loss;
   for (unsigned i = curr; i < next; ++i) {
     loss.push_back(scores_exprs[i]);
   }
+  std::vector<dynet::expr::Expression> all_params = parser_states[0]->get_params();
+  std::vector<dynet::expr::Expression> reg;
+  for (auto e : all_params) { reg.push_back(dynet::expr::squared_norm(e)); }
   dynet::expr::Expression l =
-    dynet::expr::pickneglogsoftmax(dynet::expr::concatenate(loss), corr - curr);
+    dynet::expr::pickneglogsoftmax(dynet::expr::concatenate(loss), corr - curr) + 0.5 * lambda_ * dynet::expr::sum(reg);
   float ret = dynet::as_scalar(cg.incremental_forward(l));
   cg.backward(l);
   trainer->update(1.f);
+
+  for (ParserState * parser_state : parser_states) { delete parser_state; }
   return ret;
 }
 
@@ -436,14 +445,17 @@ float SupervisedTrainer::train_partial_tree(const InputUnits& input_units,
     parser_state->perform_action(action, cg, transition_state);
     n_actions++;
   }
-  delete parser_state;
 
   float ret = 0.f;
   if (loss.size() > 0) {
-    dynet::expr::Expression l = dynet::expr::sum(loss);
+    std::vector<dynet::expr::Expression> all_params = parser_state->get_params();
+    std::vector<dynet::expr::Expression> reg;
+    for (auto e : all_params) { reg.push_back(dynet::expr::squared_norm(e)); }
+    dynet::expr::Expression l = dynet::expr::sum(loss) + 0.5 * loss.size() * lambda_ * dynet::expr::sum(reg);
     ret = dynet::as_scalar(cg.incremental_forward(l));
     cg.backward(l);
     trainer->update(1.f);
   }
+  delete parser_state;
   return ret;
 }

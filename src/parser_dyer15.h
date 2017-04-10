@@ -58,6 +58,8 @@ struct Dyer15ParserModel : public ParserModel {
                     const Embeddings & embeddings);
 
   void new_graph(dynet::ComputationGraph & cg) override;
+
+  std::vector<dynet::expr::Expression> get_params() override;
 };
 
 struct Dyer15ParserState : public ParserState {
@@ -123,6 +125,8 @@ struct Dyer15ParserState : public ParserState {
   ParserState * copy() override;
 
   dynet::expr::Expression get_scores() override;
+
+  std::vector<dynet::expr::Expression> get_params() override;
 };
 
 struct Dyer15ParserStateBuilder : public ParserStateBuilder {

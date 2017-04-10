@@ -20,18 +20,19 @@ struct LayerI {
   void inactive_training() { trainable = false; }
   // Initialize parameter
   virtual void new_graph(dynet::ComputationGraph& cg) = 0;
+  virtual std::vector<dynet::expr::Expression> get_params() = 0;
 };
 
 struct SymbolEmbedding : public LayerI {
   dynet::ComputationGraph* cg;
   dynet::LookupParameter p_labels;
 
-  SymbolEmbedding(dynet::Model& m,
-                  unsigned n,
-                  unsigned dim,
-                  bool trainable=true);
+  SymbolEmbedding(dynet::Model& m, unsigned n, unsigned dim, bool trainable=true);
+  SymbolEmbedding(dynet::Model& m, unsigned n, unsigned dim, float scale, bool trainable=true);
   void new_graph(dynet::ComputationGraph& cg) override;
+  std::vector<dynet::expr::Expression> get_params() override;
   dynet::expr::Expression embed(unsigned label_id);
+  dynet::expr::Expression embed(const std::vector<unsigned> & label_ids);
 };
 
 struct BinnedDistanceEmbedding : public LayerI {
@@ -44,6 +45,7 @@ struct BinnedDistanceEmbedding : public LayerI {
                           unsigned n_bin=8,
                           bool trainable=true);
   void new_graph(dynet::ComputationGraph& cg) override;
+  std::vector<dynet::expr::Expression> get_params() override;
   dynet::expr::Expression embed(int distance);
 };
 
@@ -57,6 +59,7 @@ struct BinnedDurationEmbedding : public LayerI {
                           unsigned n_bin=8,
                           bool trainable=true);
   void new_graph(dynet::ComputationGraph& cg) override;
+  std::vector<dynet::expr::Expression> get_params() override;
   dynet::expr::Expression embed(unsigned dur);
 };
 
@@ -174,6 +177,11 @@ struct BidirectionalRNNLayer : public LayerI {
     bw_guard = dynet::expr::parameter(hg, p_bw_guard);
   }
 
+  std::vector<dynet::expr::Expression> get_params() {
+    std::vector<dynet::expr::Expression> ret = { fw_guard, bw_guard };
+    return ret;
+  }
+
   void set_dropout(float& rate) {
     fw_rnn.set_dropout(rate);
     bw_rnn.set_dropout(rate);
@@ -205,6 +213,7 @@ struct CNNLayer : public LayerI {
            bool trainable=true);
 
   void new_graph(dynet::ComputationGraph& hg) override;
+  std::vector<dynet::expr::Expression> get_params() override;
   dynet::expr::Expression get_output(const std::vector<dynet::expr::Expression>& exprs);
 };
 
@@ -217,6 +226,7 @@ struct SoftmaxLayer : public LayerI {
                unsigned dim_output,
                bool trainable=true);
   void new_graph(dynet::ComputationGraph& hg) override;
+  std::vector<dynet::expr::Expression> get_params() override;
   dynet::expr::Expression get_output(const dynet::expr::Expression& expr);
 };
 
@@ -229,6 +239,7 @@ struct DenseLayer : public LayerI {
              unsigned dim_output,
              bool trainable=true);
   void new_graph(dynet::ComputationGraph& hg) override;
+  std::vector<dynet::expr::Expression> get_params() override;
   dynet::expr::Expression get_output(const dynet::expr::Expression& expr);
 };
 
@@ -242,6 +253,7 @@ struct Merge2Layer : public LayerI {
               unsigned dim_output,
               bool trainable=true);
   void new_graph(dynet::ComputationGraph& hg) override;
+  std::vector<dynet::expr::Expression> get_params() override;
   dynet::expr::Expression get_output(const dynet::expr::Expression& expr1,
                                      const dynet::expr::Expression& expr2);
 };
@@ -258,6 +270,7 @@ struct Merge3Layer : public LayerI {
               unsigned dim_output,
               bool trainable=true);
   void new_graph(dynet::ComputationGraph& hg) override;
+  std::vector<dynet::expr::Expression> get_params() override;
   dynet::expr::Expression get_output(const dynet::expr::Expression& expr1,
                                      const dynet::expr::Expression& expr2,
                                      const dynet::expr::Expression& expr3);
@@ -275,6 +288,7 @@ struct Merge4Layer : public LayerI {
               unsigned dim_output,
               bool trainable=true);
   void new_graph(dynet::ComputationGraph& hg) override;
+  std::vector<dynet::expr::Expression> get_params() override;
   dynet::expr::Expression get_output(const dynet::expr::Expression& expr1,
                                      const dynet::expr::Expression& expr2,
                                      const dynet::expr::Expression& expr3,
@@ -294,6 +308,7 @@ struct Merge5Layer : public LayerI {
               unsigned dim_output,
               bool trainable=true);
   void new_graph(dynet::ComputationGraph& hg) override;
+  std::vector<dynet::expr::Expression> get_params() override;
   dynet::expr::Expression get_output(const dynet::expr::Expression& expr1,
                                      const dynet::expr::Expression& expr2,
                                      const dynet::expr::Expression& expr3,
@@ -315,6 +330,7 @@ struct Merge6Layer : public LayerI {
               unsigned dim_output,
               bool trainable=true);
   void new_graph(dynet::ComputationGraph& hg) override;
+  std::vector<dynet::expr::Expression> get_params() override;
   dynet::expr::Expression get_output(const dynet::expr::Expression& expr1,
                                      const dynet::expr::Expression& expr2,
                                      const dynet::expr::Expression& expr3,

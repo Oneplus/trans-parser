@@ -17,6 +17,7 @@ struct SupervisedTrainer {
   OBJECTIVE_TYPE objective_type;
   ParserStateBuilder & state_builder;
   const Noisifier& noisifier;
+  float lambda_;
   float do_pretrain_iter;
   float do_explore_prob;
 

@@ -72,6 +72,21 @@ void Dyer15ParserModel::new_graph(dynet::ComputationGraph & cg) {
   stack_guard = dynet::expr::parameter(cg, p_stack_guard);
 }
 
+std::vector<dynet::expr::Expression> Dyer15ParserModel::get_params() {
+  std::vector<dynet::expr::Expression> ret;
+  for (auto & layer : s_lstm.param_vars) { for (auto & e : layer) { ret.push_back(e); } }
+  for (auto & layer : q_lstm.param_vars) { for (auto & e : layer) { ret.push_back(e); } }
+  for (auto & layer : a_lstm.param_vars) { for (auto & e : layer) { ret.push_back(e); } }
+  for (auto & e : merge_input.get_params()) { ret.push_back(e); }
+  for (auto & e : merge.get_params()) { ret.push_back(e); }
+  for (auto & e : composer.get_params()) { ret.push_back(e); }
+  for (auto & e : scorer.get_params()) { ret.push_back(e); }
+  ret.push_back(buffer_guard);
+  ret.push_back(stack_guard);
+  ret.push_back(action_start);
+  return ret;
+}
+
 void Dyer15ParserState::ArcEagerPerformer::perform_action(const unsigned & action,
                                                           dynet::ComputationGraph & cg) {
   dynet::expr::Expression act_expr = state->model.act_emb.embed(action);
@@ -358,6 +373,10 @@ dynet::expr::Expression Dyer15ParserState::get_scores() {
     model.q_lstm.get_h(q_pointer).back(),
     model.a_lstm.get_h(a_pointer).back())
   ));
+}
+
+std::vector<dynet::expr::Expression> Dyer15ParserState::get_params() {
+  return model.get_params();
 }
 
 Dyer15ParserStateBuilder::Dyer15ParserStateBuilder(const po::variables_map & conf,

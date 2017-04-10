@@ -47,6 +47,8 @@ struct Kiperwasser16ParserModel : public ParserModel {
                            const Embeddings & pretrained);
 
   void new_graph(dynet::ComputationGraph & cg) override;
+
+  std::vector<dynet::expr::Expression> get_params() override;
 };
 
 struct Kiperwasser16ParserState : public ParserState {
@@ -108,6 +110,8 @@ struct Kiperwasser16ParserState : public ParserState {
   ParserState * copy() override;
 
   dynet::expr::Expression get_scores() override;
+
+  std::vector<dynet::expr::Expression> get_params() override;
 };
 
 struct Kiperwasser16ParserStateBuilder : public ParserStateBuilder {

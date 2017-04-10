@@ -288,6 +288,26 @@ void Ballesteros15ParserModel::new_graph(dynet::ComputationGraph & cg) {
   root_word = dynet::expr::parameter(cg, p_root_word);
 }
 
+std::vector<dynet::expr::Expression> Ballesteros15ParserModel::get_params() {
+  std::vector<dynet::expr::Expression> ret;
+  for (auto & layer : fwd_ch_lstm.param_vars) { for (auto & e : layer) { ret.push_back(e); } }
+  for (auto & layer : bwd_ch_lstm.param_vars) { for (auto & e : layer) { ret.push_back(e); } }
+  for (auto & layer : s_lstm.param_vars) { for (auto & e : layer) { ret.push_back(e); } }
+  for (auto & layer : q_lstm.param_vars) { for (auto & e : layer) { ret.push_back(e); } }
+  for (auto & layer : a_lstm.param_vars) { for (auto & e : layer) { ret.push_back(e); } }
+  for (auto & e : merge_input.get_params()) { ret.push_back(e); }
+  for (auto & e : merge.get_params()) { ret.push_back(e); }
+  for (auto & e : composer.get_params()) { ret.push_back(e); }
+  for (auto & e : scorer.get_params()) { ret.push_back(e); }
+  ret.push_back(buffer_guard);
+  ret.push_back(stack_guard);
+  ret.push_back(action_start);
+  ret.push_back(word_start_guard);
+  ret.push_back(word_end_guard);
+  ret.push_back(root_word);
+  return ret;
+}
+
 Ballesteros15ParserState::Ballesteros15ParserState(Ballesteros15ParserModel & model): model(model) {
   std::string system_name = model.system.system_name();
   if (system_name == "arcstd") {
@@ -382,6 +402,10 @@ dynet::expr::Expression Ballesteros15ParserState::get_scores() {
     model.q_lstm.get_h(q_pointer).back(),
     model.a_lstm.get_h(a_pointer).back())
   ));
+}
+
+std::vector<dynet::expr::Expression> Ballesteros15ParserState::get_params() {
+  return model.get_params();
 }
 
 Ballesteros15ParserStateBuilder::Ballesteros15ParserStateBuilder(const po::variables_map & conf,

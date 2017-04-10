@@ -20,6 +20,8 @@ struct ParserModel {
   TransitionSystem & get_system() { return system; }
 
   virtual void new_graph(dynet::ComputationGraph& cg) = 0;
+
+  virtual std::vector<dynet::expr::Expression> get_params() = 0;
 };
 
 struct ParserState {
@@ -40,6 +42,8 @@ struct ParserState {
                               const TransitionState & state) = 0;
 
   virtual dynet::expr::Expression get_scores() = 0;
+
+  virtual std::vector<dynet::expr::Expression> get_params() = 0;
 };
 
 struct ParserStateBuilder {
