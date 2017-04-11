@@ -354,14 +354,41 @@ float SupervisedTrainer::train_structure_full_tree(const InputUnits & input_unit
       if (cursor == corr && action == gold_action) { new_corr = new_next; }
       new_next++;
     }
-    if (new_corr == UINT_MAX) {
+    bool early_update = (new_corr == UINT_MAX);
+
+    if (early_update) {
       // early stopping
-      break;
-    } else {
-      corr = new_corr;
-      curr = new_curr;
-      next = new_next;
+      for (unsigned i = beam_size; i < transitions.size(); ++i) {
+        unsigned cursor = std::get<0>(transitions[i]);
+        unsigned action = std::get<1>(transitions[i]);
+        float new_score = std::get<2>(transitions[i]);
+        if (cursor == corr && action == gold_action) {
+          dynet::expr::Expression new_score_expr = std::get<3>(transitions[i]);
+          TransitionState & transition_state = transition_states[cursor];
+          TransitionState new_transition_state(transition_state);
+          ParserState * parser_state = parser_states[cursor];
+          ParserState * new_parser_state = parser_state->copy();
+          if (action != system.num_actions()) {
+            system.perform_action(new_transition_state, action);
+            new_parser_state->perform_action(action, cg, new_transition_state);
+          }
+          //      
+          transition_states.push_back(new_transition_state);
+          scores.push_back(new_score);
+          scores_exprs.push_back(new_score_expr);
+          parser_states.push_back(new_parser_state);
+          new_corr = new_next;
+          new_next++;
+          break;
+        }
+      }
     }
+
+    corr = new_corr;
+    curr = new_curr;
+    next = new_next;
+
+    if (early_update) { break; }
   }
 
   std::vector<dynet::expr::Expression> loss;
