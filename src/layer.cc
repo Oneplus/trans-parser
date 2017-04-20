@@ -156,7 +156,7 @@ std::vector<dynet::expr::Expression> CNNLayer::get_params() {
 }
 
 dynet::expr::Expression CNNLayer::get_output(const std::vector<dynet::expr::Expression>& c) {
-  std::vector<dynet::expr::Expression> s(c);
+  /*std::vector<dynet::expr::Expression> s(c);
   std::vector<dynet::expr::Expression> tmp;
   for (unsigned ii = 0; ii < filters_info.size(); ++ii) {
     const auto& filter_width = filters_info[ii].first;
@@ -173,7 +173,8 @@ dynet::expr::Expression CNNLayer::get_output(const std::vector<dynet::expr::Expr
     }
     for (unsigned p = 0; p < filter_width - 1; ++p) { s.pop_back(); }
   }
-  return W * dynet::expr::concatenate(tmp);
+  return W * dynet::expr::concatenate(tmp);*/
+  return dynet::expr::Expression();
 }
 
 SoftmaxLayer::SoftmaxLayer(dynet::Model& m,
