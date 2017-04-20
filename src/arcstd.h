@@ -42,6 +42,8 @@ struct ArcStandard : public TransitionSystem {
                           const std::vector<unsigned>& deprels,
                           std::vector<unsigned>& actions) override;
 
+  void split(const unsigned & action, unsigned & structure, unsigned & deprel) override;
+
   void shift_unsafe(TransitionState& state) const;
   void left_unsafe(TransitionState& state, const unsigned& deprel) const;
   void right_unsafe(TransitionState& state, const unsigned& deprel) const;

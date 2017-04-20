@@ -266,6 +266,18 @@ void ArcEager::get_oracle_actions(const std::vector<unsigned>& ref_heads,
   }
 }
 
+void ArcEager::split(const unsigned & action,
+                     unsigned & structure,
+                     unsigned & deprel) {
+  if (action < 2) {
+    structure = action;
+    deprel = UINT_MAX;
+  } else {
+    structure = 1 + ((action - 2) % 2);
+    deprel = (action - 2) / 2;
+  }
+}
+
 void ArcEager::get_oracle_actions_onestep(const std::vector<unsigned>& ref_heads,
                                           const std::vector<unsigned>& ref_deprels,
                                           std::vector<unsigned>& sigma,

@@ -47,7 +47,7 @@ struct Ballesteros15ParserModel : public ParserModel {
   const Embeddings & pretrained;
 
   /// The Configurations: useful for other models.
-  unsigned size_c, dim_c, dim_w, size_p, dim_p, size_t, dim_t, size_a, dim_a, dim_l;
+  unsigned size_c, dim_c, dim_w, size_p, dim_p, size_t, dim_t, size_l, dim_l, size_a, dim_a;
   unsigned n_layers, dim_lstm_in, dim_hidden;
 
   Ballesteros15ParserModel(dynet::Model& m,
@@ -58,9 +58,10 @@ struct Ballesteros15ParserModel : public ParserModel {
                            unsigned dim_p,   // pos size, pos dim
                            unsigned size_t,  //
                            unsigned dim_t,   // pword size, pword dim
+                           unsigned size_l,
+                           unsigned dim_l,
                            unsigned size_a,  //
                            unsigned dim_a,   // act size, act dim
-                           unsigned dim_l,
                            unsigned n_layers,
                            unsigned dim_lstm_in,
                            unsigned dim_hidden,

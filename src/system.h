@@ -50,6 +50,8 @@ struct TransitionSystem {
   virtual void get_oracle_actions(const std::vector<unsigned>& heads,
                                   const std::vector<unsigned>& deprels,
                                   std::vector<unsigned>& actions) = 0;
+
+  virtual void split(const unsigned & action, unsigned & structure, unsigned & deprel) = 0;
 };
 
 #endif  //  end for SYSTEM_H

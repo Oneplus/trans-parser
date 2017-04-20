@@ -12,7 +12,8 @@
 void Ballesteros15ParserState::ArcEagerPerformer::perform_action(const unsigned & action,
                                                                  dynet::ComputationGraph & cg) {
   dynet::expr::Expression act_expr = state->model.act_emb.embed(action);
-  dynet::expr::Expression rel_expr = state->model.rel_emb.embed(action);
+  unsigned _, deprel; state->model.system.split(action, _, deprel);
+  dynet::expr::Expression rel_expr = state->model.rel_emb.embed((deprel == UINT_MAX ? state->model.size_l: deprel));
   dynet::LSTMBuilder & a_lstm = state->model.a_lstm;
   dynet::LSTMBuilder & s_lstm = state->model.s_lstm;
   dynet::LSTMBuilder & q_lstm = state->model.q_lstm;
@@ -69,7 +70,8 @@ void Ballesteros15ParserState::ArcEagerPerformer::perform_action(const unsigned 
 void Ballesteros15ParserState::ArcStandardPerformer::perform_action(const unsigned & action,
                                                                     dynet::ComputationGraph & cg) {
   dynet::expr::Expression act_expr = state->model.act_emb.embed(action);
-  dynet::expr::Expression rel_expr = state->model.rel_emb.embed(action);
+  unsigned _, deprel; state->model.system.split(action, _, deprel);
+  dynet::expr::Expression rel_expr = state->model.rel_emb.embed((deprel == UINT_MAX ? state->model.size_l: deprel));
   dynet::LSTMBuilder & a_lstm = state->model.a_lstm;
   dynet::LSTMBuilder & s_lstm = state->model.s_lstm;
   dynet::LSTMBuilder & q_lstm = state->model.q_lstm;
@@ -111,7 +113,8 @@ void Ballesteros15ParserState::ArcStandardPerformer::perform_action(const unsign
 void Ballesteros15ParserState::ArcHybridPerformer::perform_action(const unsigned & action,
                                                                   dynet::ComputationGraph & cg) {
   dynet::expr::Expression act_expr = state->model.act_emb.embed(action);
-  dynet::expr::Expression rel_expr = state->model.rel_emb.embed(action);
+  unsigned _, deprel; state->model.system.split(action, _, deprel);
+  dynet::expr::Expression rel_expr = state->model.rel_emb.embed((deprel == UINT_MAX ? state->model.size_l: deprel));
   dynet::LSTMBuilder & a_lstm = state->model.a_lstm;
   dynet::LSTMBuilder & s_lstm = state->model.s_lstm;
   dynet::LSTMBuilder & q_lstm = state->model.q_lstm;
@@ -161,7 +164,8 @@ void Ballesteros15ParserState::ArcHybridPerformer::perform_action(const unsigned
 void Ballesteros15ParserState::SwapPerformer::perform_action(const unsigned & action,
                                                              dynet::ComputationGraph & cg) {
   dynet::expr::Expression act_expr = state->model.act_emb.embed(action);
-  dynet::expr::Expression rel_expr = state->model.rel_emb.embed(action);
+  unsigned _, deprel; state->model.system.split(action, _, deprel);
+  dynet::expr::Expression rel_expr = state->model.rel_emb.embed((deprel == UINT_MAX ? state->model.size_l: deprel));
   dynet::LSTMBuilder & a_lstm = state->model.a_lstm;
   dynet::LSTMBuilder & s_lstm = state->model.s_lstm;
   dynet::LSTMBuilder & q_lstm = state->model.q_lstm;
@@ -222,9 +226,10 @@ Ballesteros15ParserModel::Ballesteros15ParserModel(dynet::Model & m,
                                                    unsigned dim_p,
                                                    unsigned size_t,
                                                    unsigned dim_t,
+                                                   unsigned size_l,
+                                                   unsigned dim_l,
                                                    unsigned size_a,
                                                    unsigned dim_a,
-                                                   unsigned dim_l,
                                                    unsigned n_layers,
                                                    unsigned dim_lstm_in,
                                                    unsigned dim_hidden,
@@ -240,7 +245,7 @@ Ballesteros15ParserModel::Ballesteros15ParserModel(dynet::Model & m,
   pos_emb(m, size_p, dim_p),
   preword_emb(m, size_t, dim_t, false),
   act_emb(m, size_a, dim_a),
-  rel_emb(m, size_a, dim_l),
+  rel_emb(m, size_l + 1, dim_l),
   merge_input(m, dim_w + dim_w, dim_p, dim_t, dim_lstm_in),
   merge(m, dim_hidden, dim_hidden, dim_hidden, dim_hidden),
   composer(m, dim_lstm_in, dim_lstm_in, dim_l, dim_lstm_in),
@@ -255,7 +260,7 @@ Ballesteros15ParserModel::Ballesteros15ParserModel(dynet::Model & m,
   size_c(size_c), dim_c(dim_c), dim_w(dim_w),
   size_p(size_p), dim_p(dim_p),
   size_t(size_t), dim_t(dim_t),
-  size_a(size_a), dim_a(dim_a), dim_l(dim_l),
+  size_l(size_l), dim_l(dim_l), size_a(size_a), dim_a(dim_a),
   n_layers(n_layers), dim_lstm_in(dim_lstm_in), dim_hidden(dim_hidden) {
   for (auto it : pretrained) {
     preword_emb.p_labels.initialize(it.first, it.second);
@@ -422,9 +427,10 @@ Ballesteros15ParserStateBuilder::Ballesteros15ParserStateBuilder(const po::varia
                                               conf["pos_dim"].as<unsigned>(),
                                               corpus.norm_map.size() + 1,
                                               conf["pretrained_dim"].as<unsigned>(),
+                                              system.num_deprels(),
+                                              conf["label_dim"].as<unsigned>(),
                                               system.num_actions(),
                                               conf["action_dim"].as<unsigned>(),
-                                              conf["label_dim"].as<unsigned>(),
                                               conf["layers"].as<unsigned>(),
                                               conf["lstm_input_dim"].as<unsigned>(),
                                               conf["hidden_dim"].as<unsigned>(),

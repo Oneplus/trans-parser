@@ -40,6 +40,8 @@ struct Swap : public TransitionSystem {
 
   bool is_valid_action(const TransitionState& state, const unsigned& act) const override;
 
+  void split(const unsigned & action, unsigned & structure, unsigned & deprel) override;
+
   void get_oracle_actions_calculate_orders(const unsigned & root,
                                            const std::vector<std::vector<unsigned>>& tree,
                                            std::vector<unsigned>& orders,

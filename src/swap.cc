@@ -349,3 +349,15 @@ bool Swap::is_valid_action(const TransitionState& state, const unsigned& act) co
   if (is_reduce && state.stack.size() < 3) { return false; }
   return true;
 }
+
+void Swap::split(const unsigned & action, 
+                 unsigned & structure, 
+                 unsigned & deprel) {
+  if (action < 2) {
+    structure = action;
+    deprel = UINT_MAX;
+  } else {
+    structure = 1 + ((action - 2) % 2);
+    deprel = (action - 2) / 2;
+  }
+}

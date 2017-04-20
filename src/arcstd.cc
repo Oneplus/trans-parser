@@ -271,6 +271,16 @@ void ArcStandard::get_oracle_actions(const std::vector<unsigned>& heads,
   }
 }
 
+void ArcStandard::split(const unsigned & action, unsigned & structure, unsigned & deprel) {
+  if (action == 0) {
+    structure = 0;
+    deprel = UINT_MAX;
+  } else {
+    structure = 1 + ((action - 1) % 2);
+    deprel = (action - 1) / 2;
+  } 
+}
+
 void ArcStandard::get_oracle_actions_onestep(const std::vector<unsigned>& heads,
                                              const std::vector<unsigned>& deprels,
                                              std::vector<unsigned>& sigma,
