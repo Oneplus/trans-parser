@@ -1,7 +1,6 @@
 PROJECT(trans_parser)
 cmake_minimum_required(VERSION 2.8)
 
-set(CMAKE_MACOSX_RPATH 1)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
@@ -13,6 +12,10 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #      flags (the compiler does not always make the best configuration
 #      decisions without help)
 
+# NOTE: This seems to be causing problems with linking before using
+#       make install. It is allegedly preferred, but probably doesn't
+#       suit our model of not installing the library most of the time.
+set(CMAKE_MACOSX_RPATH 0)
 function(find_mkl)
   set(MKL_ARCH intel64)
   find_path(MKL_INCLUDE_DIR mkl.h
@@ -66,7 +69,7 @@ endif()
 if(MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W1 -DEIGEN_HAS_C99_MATH /MP")   # -Wall produces 20k warnings
 else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -funroll-loops -Wall -Wno-missing-braces -std=c++11 -Ofast -g -march=native")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -funroll-loops -fno-finite-math-only -Wall -Wno-missing-braces -std=c++11 -Ofast -g -march=native")
 endif()
 
 enable_testing()
@@ -76,10 +79,10 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dynet)
 function(find_cudnn)
   set(CUDNN_ROOT "" CACHE PATH "CUDNN root path")
   find_path(CUDNN_INCLUDE_DIRS cudnn.h
-    PATHS ${CUDNN_ROOT}
+    HINTS ${CUDNN_ROOT}
           ${CUDNN_ROOT}/include
     DOC "CUDNN include path")
-  find_library(CUDNN_LIBRARIES NAMES libcudnn.so
+  find_library(CUDNN_LIBRARIES NAMES libcudnn.so cudnn.lib
     PATHS ${CUDNN_ROOT}
           ${CUDNN_ROOT}/lib
           ${CUDNN_ROOT}/lib64
@@ -94,11 +97,12 @@ function(find_cudnn)
 endfunction()
 
 # look for Boost
-if(DEFINED ENV{BOOST_ROOT})
+if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOSTROOT OR DEFINED ENV{BOOST_ROOT} OR DEFINED ENV{BOOSTROOT})
   set(Boost_NO_SYSTEM_PATHS ON)
   get_filename_component(Boost_INCLUDE_DIR "${Boost_INCLUDE_DIR}" REALPATH BASE_DIR "${CMAKE_BINARY_DIR}")
 endif()
 set(Boost_REALPATH ON)
+
 message("-- Boost dir is " ${Boost_INCLUDE_DIR})
 if (MSVC)
     find_package(Boost COMPONENTS program_options regex serialization REQUIRED)

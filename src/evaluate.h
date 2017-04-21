@@ -14,6 +14,11 @@ float evaluate(const po::variables_map & conf,
                ParserStateBuilder & state_builder,
                const std::string & output);
 
+float evaluate(const po::variables_map & conf,
+               Corpus & corpus,
+               std::vector<ParserStateBuilder *> & pretrained_state_builders,
+               const std::string & output);
+
 float beam_search(const po::variables_map & conf,
                   Corpus & corpus,
                   ParserStateBuilder & state_builder,

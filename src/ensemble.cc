@@ -8,7 +8,7 @@
 #include "noisify.h"
 #include "system_builder.h"
 #include "evaluate.h"
-#include "train_supervised.h"
+#include "train_supervised_ensemble.h"
 #include "sys_utils.h"
 #include "trainer_utils.h"
 #include <boost/program_options.hpp>
@@ -17,13 +17,14 @@
 namespace po = boost::program_options;
 
 void init_command_line(int argc, char* argv[], po::variables_map& conf) {
-  po::options_description general("Transition-based dependency parser.");
+  po::options_description general("Transition-based dependency parser with ensemble.");
   general.add_options()
     ("train,t", "Use to specify to perform training.")
     ("architecture", po::value<std::string>()->default_value("d15"), "The architecture [dyer15, ballesteros15, kiperwasser16].")
     ("training_data,T", po::value<std::string>()->required(), "The path to the training data.")
     ("devel_data,d", po::value<std::string>()->required(), "The path to the development data.")
     ("pretrained,w", po::value<std::string>(), "The path to the word embedding.")
+    ("models,m", po::value<std::string>()->required(), "The path to the model.")
     ("model,m", po::value<std::string>(), "The path to the model.")
     ("layers", po::value<unsigned>()->default_value(2), "The number of layers in LSTM.")
     ("char_dim", po::value<unsigned>()->default_value(16), "The dimension of char.")
@@ -42,8 +43,8 @@ void init_command_line(int argc, char* argv[], po::variables_map& conf) {
     ("external_eval", po::value<std::string>()->default_value("python ./script/eval.py"), "config the path for evaluation script")
     ("lambda", po::value<float>()->default_value(0.), "The L2 regularizer, should not set in --dynet-l2.")
     ("output", po::value<std::string>(), "The path to the output file.")
-    ("beam_size", po::value<unsigned>(), "The beam size.")
     ("partial", po::value<bool>()->default_value(false), "The input data contains partial annotation.")
+    ("test_ensemble", "Use to specify to test ensemble parser.")
     ("verbose,v", "Details logging.")
     ("help,h", "show help information")
     ;
@@ -51,7 +52,7 @@ void init_command_line(int argc, char* argv[], po::variables_map& conf) {
   po::options_description system_opt = TransitionSystemBuilder::get_options();
   po::options_description noisify_opt = Noisifier::get_options();
   po::options_description optimizer_opt = get_optimizer_options();
-  po::options_description supervise_opt = SupervisedTrainer::get_options();
+  po::options_description supervise_opt = SupervisedEnsembleTrainer::get_options();
 
   po::options_description cmd("Allowed options");
   cmd.add(general)
@@ -67,10 +68,6 @@ void init_command_line(int argc, char* argv[], po::variables_map& conf) {
     exit(1);
   }
   init_boost_log(conf.count("verbose") > 0);
-  if (!conf.count("training_data")) {
-    std::cerr << "Please specify --training_data (-T), even in test" << std::endl;
-    exit(1);
-  }
 }
 
 int main(int argc, char** argv) {
@@ -107,15 +104,27 @@ int main(int argc, char** argv) {
   corpus.load_training_data(conf["training_data"].as<std::string>(), allow_partial_tree);
   corpus.stat();
   corpus.get_vocabulary_and_word_count();
-
   _INFO << "Main:: after loading pretrained embedding, size(vocabulary)=" << corpus.word_map.size();
-
-  dynet::Model model;
+  
   TransitionSystem* sys = TransitionSystemBuilder(corpus).build(conf);
   bool allow_non_projective = TransitionSystemBuilder::allow_nonprojective(conf);
+   
+  std::vector<std::string> pretrained_model_paths;
+  std::string pretrained_model_path = conf["models"].as<std::string>();
+  boost::split(pretrained_model_paths, pretrained_model_path, boost::is_any_of(","), boost::token_compress_on);
 
-  Noisifier noisifier(conf, corpus);
-  ParserStateBuilder * state_builder = get_state_builder(conf, model, (*sys), corpus, pretrained);
+  unsigned n_engines = pretrained_model_paths.size();
+  assert(n_engines > 0);
+  std::vector<dynet::Model*> pretrained_models(n_engines, nullptr);
+  std::vector<ParserStateBuilder*> pretrained_state_builders(n_engines, nullptr);
+  for (unsigned i = 0; i < n_engines; ++i) {
+    pretrained_models[i] = new dynet::Model;
+    dynet::load_dynet_model(pretrained_model_paths[i], pretrained_models[i]);
+    pretrained_state_builders[i] = get_state_builder(conf, *(pretrained_models[i]), *sys, corpus, pretrained);
+  }
+
+  dynet::Model model;
+  ParserStateBuilder * state_builder = get_state_builder(conf, model, *sys, corpus, pretrained);
 
   corpus.load_devel_data(conf["devel_data"].as<std::string>(), allow_partial_tree);
   _INFO << "Main:: after loading development data, size(vocabulary)=" << corpus.word_map.size();
@@ -134,18 +143,17 @@ int main(int argc, char** argv) {
   _INFO << "Main:: write tmp file to: " << output;
 
   if (conf.count("train")) {
-    SupervisedTrainer trainer(conf, noisifier, *state_builder);
+    Noisifier noisifier(conf, corpus);
+    SupervisedEnsembleTrainer trainer(conf, noisifier, *state_builder, pretrained_state_builders);
     trainer.train(conf, corpus, model_name, output, allow_non_projective, allow_partial_tree);
   }
 
-  for (auto p : model.parameters_list()) delete p;
-  for (auto p : model.lookup_parameters_list()) delete p;
-  dynet::load_dynet_model(model_name, (&model));
-
-  if (conf.count("beam_size") && conf["beam_size"].as<unsigned>() > 1) {
-    bool structure_test = (conf["supervised_objective"].as<std::string>() == "structure");
-    beam_search(conf, corpus, *state_builder, output, structure_test);
+  if (conf.count("test_ensemble")) {
+    evaluate(conf, corpus, pretrained_state_builders, output);
   } else {
+    for (auto p : model.parameters_list()) delete p;
+    for (auto p : model.lookup_parameters_list()) delete p;
+    dynet::load_dynet_model(model_name, (&model));
     evaluate(conf, corpus, *state_builder, output);
   }
   return 0;

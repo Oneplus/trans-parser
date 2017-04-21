@@ -71,6 +71,91 @@ float evaluate(const po::variables_map & conf,
   return f_score;
 }
 
+float evaluate(const po::variables_map & conf,
+               Corpus & corpus,
+               std::vector<ParserStateBuilder*>& pretrained_state_builders,
+               const std::string & output) {
+  unsigned n_pretrained = pretrained_state_builders.size();
+  assert(n_pretrained > 0);
+  TransitionSystem & system = pretrained_state_builders[0]->system;
+  auto t_start = std::chrono::high_resolution_clock::now();
+  unsigned kUNK = corpus.get_or_add_word(Corpus::UNK);
+  std::ofstream ofs(output);
+
+  for (unsigned sid = 0; sid < corpus.n_devel; ++sid) {
+    InputUnits& input_units = corpus.devel_inputs[sid];
+    const ParseUnits& parse = corpus.devel_parses[sid];
+
+    for (InputUnit& u : input_units) {
+      if (!corpus.training_vocab.count(u.wid)) { u.wid = kUNK; }
+    }
+    ParseUnits result;
+    std::vector<ParserState *> parser_states(n_pretrained);
+    dynet::ComputationGraph cg;
+    for (unsigned i = 0; i < n_pretrained; ++i) {
+      parser_states[i] = pretrained_state_builders[i]->build();
+      parser_states[i]->new_graph(cg);
+      parser_states[i]->initialize(cg, input_units);
+    }
+
+    unsigned len = input_units.size();
+    TransitionState transition_state(len);
+    transition_state.initialize(input_units);
+
+    while (!transition_state.terminated()) {
+      std::vector<unsigned> valid_actions;
+      system.get_valid_actions(transition_state, valid_actions);
+
+      std::vector<float> ensembled_scores;
+      for (ParserState* ensembled_parser_state : parser_states) {
+        dynet::expr::Expression ensembled_score_exprs = ensembled_parser_state->get_scores();
+        std::vector<float> ensembled_score = dynet::as_vector(cg.get_value(ensembled_score_exprs));
+        if (ensembled_scores.size() == 0) {
+          ensembled_scores = ensembled_score;
+        } else {
+          for (unsigned i = 0; i < ensembled_score.size(); ++i) {
+            ensembled_scores[i] += ensembled_score[i];
+          }
+        }
+      }
+      auto payload = ParserState::get_best_action(ensembled_scores, valid_actions);
+      unsigned best_a = payload.first;
+      system.perform_action(transition_state, best_a);
+      for (ParserState * parser_state : parser_states) {
+        parser_state->perform_action(best_a, cg, transition_state);
+      }
+    }
+    for (ParserState * parser_state : parser_states) {
+      delete parser_state;
+    }
+
+    for (InputUnit& u : input_units) { u.wid = u.aux_wid; }
+    vector_to_parse(transition_state.heads, transition_state.deprels, result);
+
+    // pay attention to this, not counting the last DUMMY_ROOT
+    for (unsigned i = 0; i < len - 1; ++i) {
+      ofs << i + 1 << "\t"                //  id
+        << input_units[i].w_str << "\t"   //  form
+        << input_units[i].n_str << "\t"   //  lemma
+        << corpus.pos_map.get(input_units[i].pid) << "\t"
+        << corpus.pos_map.get(input_units[i].pid) << "\t"
+        << input_units[i].f_str << "\t"
+        << (parse[i].head >= len ? 0 : parse[i].head) << "\t"
+        << corpus.deprel_map.get(parse[i].deprel) << "\t"
+        << (result[i].head >= len ? 0 : result[i].head) << "\t"
+        << corpus.deprel_map.get(result[i].deprel)
+        << std::endl;
+    }
+    ofs << std::endl;
+  }
+  ofs.close();
+  auto t_end = std::chrono::high_resolution_clock::now();
+  float f_score = execute_and_get_result(conf["external_eval"].as<std::string>(), output);
+  _INFO << "Evaluate:: UAS " << f_score << " [" << corpus.n_devel <<
+    " sents in " << std::chrono::duration<double, std::milli>(t_end - t_start).count() << " ms]";
+  return f_score;
+}
+
 float beam_search(const po::variables_map & conf,
                   Corpus & corpus,
                   ParserStateBuilder & state_builder,
