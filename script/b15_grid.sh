@@ -18,7 +18,8 @@ do
                 --optimizer_enable_eta_decay true \
                 --optimizer_enable_clipping true \
                 --external_eval ./script/eval_ex_enpunt.py \
-                --max_iter 30 > ptb_sd.${system}.${oracle}.${l2}.log &
+                --supervised_oracle ${oracle} \
+                --max_iter 30 > ptb_sd.b15.${system}.${oracle}.${l2}.log &
         done
     done
 done
