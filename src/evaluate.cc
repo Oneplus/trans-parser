@@ -106,19 +106,19 @@ float evaluate(const po::variables_map & conf,
       std::vector<unsigned> valid_actions;
       system.get_valid_actions(transition_state, valid_actions);
 
-      std::vector<float> ensembled_scores;
-      for (ParserState* ensembled_parser_state : parser_states) {
-        dynet::expr::Expression ensembled_score_exprs = ensembled_parser_state->get_scores();
-        std::vector<float> ensembled_score = dynet::as_vector(cg.get_value(ensembled_score_exprs));
-        if (ensembled_scores.size() == 0) {
-          ensembled_scores = ensembled_score;
+      std::vector<float> scores;
+      for (ParserState* parser_state : parser_states) {
+        dynet::expr::Expression score_exprs = parser_state->get_scores();
+        std::vector<float> score = dynet::as_vector(cg.get_value(score_exprs));
+        if (scores.size() == 0) {
+          scores = score;
         } else {
-          for (unsigned i = 0; i < ensembled_score.size(); ++i) {
-            ensembled_scores[i] += ensembled_score[i];
+          for (unsigned i = 0; i < score.size(); ++i) {
+            scores[i] += score[i];
           }
         }
       }
-      auto payload = ParserState::get_best_action(ensembled_scores, valid_actions);
+      auto payload = ParserState::get_best_action(scores, valid_actions);
       unsigned best_a = payload.first;
       system.perform_action(transition_state, best_a);
       for (ParserState * parser_state : parser_states) {

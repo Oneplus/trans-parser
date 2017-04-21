@@ -119,8 +119,8 @@ int main(int argc, char** argv) {
   std::vector<ParserStateBuilder*> pretrained_state_builders(n_engines, nullptr);
   for (unsigned i = 0; i < n_engines; ++i) {
     pretrained_models[i] = new dynet::Model;
-    dynet::load_dynet_model(pretrained_model_paths[i], pretrained_models[i]);
     pretrained_state_builders[i] = get_state_builder(conf, *(pretrained_models[i]), *sys, corpus, pretrained);
+    dynet::load_dynet_model(pretrained_model_paths[i], pretrained_models[i]);
   }
 
   dynet::Model model;
