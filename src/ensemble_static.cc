@@ -46,7 +46,7 @@ void init_command_line(int argc, char* argv[], po::variables_map& conf) {
     ("lambda", po::value<float>()->default_value(0.), "The L2 regularizer, should not set in --dynet-l2.")
     ("output", po::value<std::string>(), "The path to the output file.")
     ("partial", po::value<bool>()->default_value(false), "The input data contains partial annotation.")
-    ("test_ensemble", "Use to specify to test ensemble parser.")
+    ("generate_ensemble_data", "Use to specify to test ensemble parser.")
     ("verbose,v", "Details logging.")
     ("help,h", "show help information")
     ;
@@ -150,8 +150,9 @@ int main(int argc, char** argv) {
     trainer.train(conf, corpus, model_name, output, allow_non_projective);
   }
 
-  if (conf.count("test_ensemble")) {
-    evaluate(conf, corpus, pretrained_state_builders, output);
+  if (conf.count("generate_ensemble_data")) {
+    EnsembleStaticDataGenerator generator(conf, pretrained_state_builders);
+    generator.generate(conf, corpus, output, allow_non_projective);
   } else {
     for (auto p : model.parameters_list()) delete p;
     for (auto p : model.lookup_parameters_list()) delete p;
