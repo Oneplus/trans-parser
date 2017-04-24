@@ -224,5 +224,6 @@ float SupervisedEnsembleDynamicTrainer::train_full_tree(const InputUnits& input_
     trainer->update(1.f);
   }
   delete parser_state;
+  for (ParserState * parser_state : ensembled_parser_states) { delete parser_state; }
   return ret;
 }

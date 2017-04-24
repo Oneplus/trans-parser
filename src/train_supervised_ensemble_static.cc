@@ -3,6 +3,7 @@
 #include "train_supervised_ensemble_static.h"
 #include "logging.h"
 #include "tree.h"
+#include "evaluate.h"
 #include <random>
 
 SupervisedEnsembleStaticTrainer::SupervisedEnsembleStaticTrainer(const po::variables_map & conf,
@@ -31,7 +32,7 @@ void SupervisedEnsembleStaticTrainer::train(const po::variables_map & conf,
     const ParseUnits & parse_units = corpus.training_parses[train_id];
 
     if (!DependencyUtils::is_tree(parse_units)) { continue; }
-    if (!allow_nonprojective && !DependencyUtils::is_non_projective(parse_units)) { continue; }
+    if (!allow_nonprojective && DependencyUtils::is_non_projective(parse_units)) { continue; }
     order.push_back(i);
   }
 
@@ -55,8 +56,38 @@ void SupervisedEnsembleStaticTrainer::train(const po::variables_map & conf,
 
       noisifier.noisify(input_units);
       float lp = train_full_tree(input_units, parse_units, action_units, trainer);
+
+      llh += lp;
+      llh_in_batch += lp;
+      noisifier.denoisify(input_units);
+    
+      ++logc;
+      if (logc % report_stops == 0) {
+        float epoch = (float(logc) / n_train);
+        _INFO << "ENS_STAT:: iter #" << iter << " (epoch " << epoch << ") loss " << llh_in_batch;
+        llh_in_batch = 0.f;
+      }
+      if (iter >= evaluate_skips && logc % evaluate_stops == 0) {
+        float f = evaluate(conf, corpus, state_builder, output);
+        if (f > best_f) {
+          best_f = f;
+          _INFO << "ENS_STAT:: new best record achieved: " << best_f << ", saved.";
+          dynet::save_dynet_model(name, (&model));
+        }
+      }
     }
+
+    _INFO << "ENS_STAT:: end of iter #" << iter << " loss " << llh;
+    float f = evaluate(conf, corpus, state_builder, output);
+    if (f > best_f) {
+      best_f = f;
+      _INFO << "ENS_STAT:: new best record achieved: " << best_f << ", saved.";
+      dynet::save_dynet_model(name, (&model));
+    }
+    trainer->update_epoch();
+    trainer->status();
   }
+  delete trainer;
 }
 
 float SupervisedEnsembleStaticTrainer::train_full_tree(const InputUnits & input_units,

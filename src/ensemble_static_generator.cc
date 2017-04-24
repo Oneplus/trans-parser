@@ -1,4 +1,4 @@
-#include "generate.h"
+#include "ensemble_static_generator.h"
 #include "logging.h"
 #include <fstream>
 #include "tree.h"
@@ -7,8 +7,8 @@
 po::options_description EnsembleStaticDataGenerator::get_options() {
   po::options_description cmd("Supervised dynamic ensemble options");
   cmd.add_options()
-    ("static_ensemble_n_sample", po::value<unsigned>()->default_value(30), "The number of sample.")
-    ("static_ensemble_rollin", po::value<std::string>()->default_value("egreedy"), "The type of rollin policy [expert|egreedy].")
+    ("static_ensemble_n_sample", po::value<unsigned>()->default_value(1), "The number of sample.")
+    ("static_ensemble_rollin", po::value<std::string>()->default_value("expert"), "The type of rollin policy [expert|egreedy|boltzmann].")
     ("static_ensemble_objective", po::value<std::string>()->default_value("crossentropy"), "The learning objective [crossentropy|sparse_crossentropy]")
     ("static_ensemble_egreedy_epsilon", po::value<float>()->default_value(0.1f), "The epsilon for epsilon-greedy policy.")
     ("static_ensemble_boltzmann_temperature", po::value<float>()->default_value(1.f), "The epsilon for epsilon-greedy policy.")
@@ -21,6 +21,9 @@ EnsembleStaticDataGenerator::EnsembleStaticDataGenerator(const po::variables_map
   pretrained_state_builders(pretrained_state_builders) {
   n_pretrained = pretrained_state_builders.size();
   _INFO << "GEN:: number of parsers: " << n_pretrained;
+
+  n_sample = conf["static_ensemble_n_sample"].as<unsigned>();
+  _INFO << "GEN:: generate # samples " << n_sample;
 
   std::string rollin_name = conf["static_ensemble_rollin"].as<std::string>();
   if (rollin_name == "egreedy") {
@@ -46,7 +49,7 @@ void EnsembleStaticDataGenerator::generate(const po::variables_map & conf,
                                            Corpus & corpus,
                                            const std::string & output,
                                            bool allow_nonprojective) {
-  _INFO << "GEN:: start lstm-parser supervised ensemble training.";
+  _INFO << "GEN:: start lstm-parser supervised ensemble training data generation.";
   TransitionSystem & system = pretrained_state_builders[0]->system;
 
   unsigned max_iter = conf["max_iter"].as<unsigned>();
@@ -57,6 +60,7 @@ void EnsembleStaticDataGenerator::generate(const po::variables_map & conf,
   unsigned n_train = corpus.n_train;
 
   std::ofstream ofs(output);
+  ofs << "num_actions=" << system.num_actions() << std::endl;
   for (unsigned sid = 0; sid < corpus.n_train; ++sid) {
     InputUnits& input_units = corpus.training_inputs[sid];
     const ParseUnits& parse_units = corpus.training_parses[sid];
@@ -134,12 +138,14 @@ void EnsembleStaticDataGenerator::generate(const po::variables_map & conf,
         n_actions++;
       }
       ofs << std::endl;
+      
+      for (ParserState * parser_state : ensembled_parser_states) { delete parser_state; }
     }
 
     ++logc;
     if (logc % report_stops == 0) {
       float epoch = (float(logc) / n_train);
-      _INFO << "GEN:: finished " << epoch << "%";
+      _INFO << "GEN:: finished " << epoch << " data.";
     }
   }
 }

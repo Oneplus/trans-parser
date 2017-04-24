@@ -109,7 +109,8 @@ struct CorpusWithActions : public Corpus {
   void load_training_actions(const std::string & filename);
 
   void parse_data2(const std::string & data,
-                   ActionUnits & action_units);
+                   ActionUnits & action_units,
+                   unsigned n_actions);
 };
 
 #endif  //  end for CORPUS_H

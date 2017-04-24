@@ -1,5 +1,5 @@
-#ifndef GENERATE_H
-#define GENERATE_H
+#ifndef ENSEMBLE_STATIC_GENERATOR_H
+#define ENSEMBLE_STATIC_GENERATOR_H
 
 #include <iostream>
 #include <set>
@@ -28,4 +28,4 @@ struct EnsembleStaticDataGenerator {
                 bool allow_nonprojective);
 };
 
-#endif  //  end for GENERATE_H
+#endif  //  end for ENSEMBLE_STATIC_GENERATOR_H

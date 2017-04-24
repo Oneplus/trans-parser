@@ -1,6 +1,6 @@
 add_library (tp_layer layer.cc layer.h)
 add_library (tp_noisify noisify.cc noisify.h)
-add_library (tp_evaluate evaluate.cc evaluate.h generate.cc generate.h)
+add_library (tp_evaluate evaluate.cc evaluate.h)
 
 add_library (tp_system
     arcstd.cc arcstd.h
@@ -29,6 +29,7 @@ add_library (tp_utils
 
 add_library (tp_train
     train_supervised.cc train_supervised.h 
+    ensemble_static_generator.cc ensemble_static_generator.h
     train_supervised_ensemble_static.cc train_supervised_ensemble_static.h
     train_supervised_ensemble_dynamic.cc train_supervised_ensemble_dynamic.h)
     

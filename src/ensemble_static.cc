@@ -8,7 +8,7 @@
 #include "noisify.h"
 #include "system_builder.h"
 #include "evaluate.h"
-#include "generate.h"
+#include "ensemble_static_generator.h"
 #include "train_supervised_ensemble_static.h"
 #include "sys_utils.h"
 #include "trainer_utils.h"
@@ -25,7 +25,7 @@ void init_command_line(int argc, char* argv[], po::variables_map& conf) {
     ("training_data,T", po::value<std::string>()->required(), "The path to the training data.")
     ("devel_data,d", po::value<std::string>()->required(), "The path to the development data.")
     ("pretrained,w", po::value<std::string>(), "The path to the word embedding.")
-    ("actions", po::value<std::string>(), "The path to the static action data.")
+    ("training_actions", po::value<std::string>(), "The path to the static action data.")
     ("models,m", po::value<std::string>()->required(), "The path to the model.")
     ("model,m", po::value<std::string>(), "The path to the model.")
     ("layers", po::value<unsigned>()->default_value(2), "The number of layers in LSTM.")
@@ -106,6 +106,9 @@ int main(int argc, char** argv) {
   }
 
   corpus.load_training_data(conf["training_data"].as<std::string>(), allow_partial_tree);
+  if (conf.count("train")) {
+    corpus.load_training_actions(conf["training_actions"].as<std::string>());
+  }
   corpus.stat();
   corpus.get_vocabulary_and_word_count();
   _INFO << "Main:: after loading pretrained embedding, size(vocabulary)=" << corpus.word_map.size();
@@ -119,16 +122,24 @@ int main(int argc, char** argv) {
 
   unsigned n_engines = pretrained_model_paths.size();
   assert(n_engines > 0);
+
   std::vector<dynet::Model*> pretrained_models(n_engines, nullptr);
   std::vector<ParserStateBuilder*> pretrained_state_builders(n_engines, nullptr);
-  for (unsigned i = 0; i < n_engines; ++i) {
-    pretrained_models[i] = new dynet::Model;
-    pretrained_state_builders[i] = get_state_builder(conf, *(pretrained_models[i]), *sys, corpus, pretrained);
-    dynet::load_dynet_model(pretrained_model_paths[i], pretrained_models[i]);
-  }
 
-  dynet::Model model;
-  ParserStateBuilder * state_builder = get_state_builder(conf, model, *sys, corpus, pretrained);
+  if (conf.count("generate_ensemble_data")) {
+    for (unsigned i = 0; i < n_engines; ++i) {
+      pretrained_models[i] = new dynet::Model;
+      pretrained_state_builders[i] = get_state_builder(conf, *(pretrained_models[i]), *sys, corpus, pretrained);
+      dynet::load_dynet_model(pretrained_model_paths[i], pretrained_models[i]);
+    }
+  }
+  
+  dynet::Model * model = nullptr;
+  ParserStateBuilder * state_builder = nullptr;
+  if (conf.count("train")) {
+    model = new dynet::Model;
+    state_builder = get_state_builder(conf, *model, *sys, corpus, pretrained);
+  }
 
   corpus.load_devel_data(conf["devel_data"].as<std::string>(), allow_partial_tree);
   _INFO << "Main:: after loading development data, size(vocabulary)=" << corpus.word_map.size();
@@ -156,9 +167,9 @@ int main(int argc, char** argv) {
     EnsembleStaticDataGenerator generator(conf, pretrained_state_builders);
     generator.generate(conf, corpus, output, allow_non_projective);
   } else {
-    for (auto p : model.parameters_list()) delete p;
-    for (auto p : model.lookup_parameters_list()) delete p;
-    dynet::load_dynet_model(model_name, (&model));
+    for (auto p : model->parameters_list()) delete p;
+    for (auto p : model->lookup_parameters_list()) delete p;
+    dynet::load_dynet_model(model_name, model);
     evaluate(conf, corpus, *state_builder, output);
   }
   return 0;
