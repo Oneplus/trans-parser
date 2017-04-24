@@ -4,6 +4,18 @@
 #include "tree.h"
 #include "math_utils.h"
 
+po::options_description EnsembleStaticDataGenerator::get_options() {
+  po::options_description cmd("Supervised dynamic ensemble options");
+  cmd.add_options()
+    ("static_ensemble_n_sample", po::value<unsigned>()->default_value(30), "The number of sample.")
+    ("static_ensemble_rollin", po::value<std::string>()->default_value("egreedy"), "The type of rollin policy [expert|egreedy].")
+    ("static_ensemble_objective", po::value<std::string>()->default_value("crossentropy"), "The learning objective [crossentropy|sparse_crossentropy]")
+    ("static_ensemble_egreedy_epsilon", po::value<float>()->default_value(0.1f), "The epsilon for epsilon-greedy policy.")
+    ("static_ensemble_boltzmann_temperature", po::value<float>()->default_value(1.f), "The epsilon for epsilon-greedy policy.")
+    ;
+  return cmd;
+}
+
 EnsembleStaticDataGenerator::EnsembleStaticDataGenerator(const po::variables_map & conf,
                                                          std::vector<ParserStateBuilder*>& pretrained_state_builders) :
   pretrained_state_builders(pretrained_state_builders) {
@@ -25,7 +37,7 @@ EnsembleStaticDataGenerator::EnsembleStaticDataGenerator(const po::variables_map
     epsilon = conf["static_ensemble_egreedy_epsilon"].as<float>();
     _INFO << "GEN:: epsilon for egreedy policy: " << epsilon;
   } else if (rollin_type == kBoltzmann) {
-    temperature = conf["static_ensemble_boltzmann"].as<float>();
+    temperature = conf["static_ensemble_boltzmann_temperature"].as<float>();
     _INFO << "GEN:: temperature for boltzmann policy: " << temperature;
   }
 }

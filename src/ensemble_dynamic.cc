@@ -8,7 +8,7 @@
 #include "noisify.h"
 #include "system_builder.h"
 #include "evaluate.h"
-#include "train_supervised_ensemble.h"
+#include "train_supervised_ensemble_dynamic.h"
 #include "sys_utils.h"
 #include "trainer_utils.h"
 #include <boost/program_options.hpp>
@@ -52,7 +52,7 @@ void init_command_line(int argc, char* argv[], po::variables_map& conf) {
   po::options_description system_opt = TransitionSystemBuilder::get_options();
   po::options_description noisify_opt = Noisifier::get_options();
   po::options_description optimizer_opt = get_optimizer_options();
-  po::options_description supervise_opt = SupervisedEnsembleTrainer::get_options();
+  po::options_description supervise_opt = SupervisedEnsembleDynamicTrainer::get_options();
 
   po::options_description cmd("Allowed options");
   cmd.add(general)

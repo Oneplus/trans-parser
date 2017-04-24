@@ -17,6 +17,8 @@ struct EnsembleStaticDataGenerator {
   unsigned n_sample;
   unsigned n_pretrained;
   
+  static po::options_description get_options();
+
   EnsembleStaticDataGenerator(const po::variables_map& conf,
                               std::vector<ParserStateBuilder *>& pretrained_state_builders);
 
