@@ -25,4 +25,9 @@ float beam_search(const po::variables_map & conf,
                   const std::string & output,
                   bool structure);
 
+void generate_static_ensemble_data(const po::variables_map & conf,
+                                   Corpus & corpus,
+                                   std::vector<ParserStateBuilder *> & pretrained_state_builders,
+                                   const std::string & output);
+
 #endif  //  end for EVALUATE_H

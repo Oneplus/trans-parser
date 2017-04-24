@@ -269,3 +269,9 @@ float beam_search(const po::variables_map & conf,
     " sents in " << std::chrono::duration<double, std::milli>(t_end - t_start).count() << " ms]";
   return f_score;
 }
+
+void generate_static_ensemble_data(const po::variables_map & conf,
+                                   Corpus & corpus,
+                                   std::vector<ParserStateBuilder*>& pretrained_state_builders, 
+                                   const std::string & output) {
+}

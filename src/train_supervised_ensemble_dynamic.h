@@ -1,5 +1,5 @@
-#ifndef TRAIN_SUPERVISED_ENSEMBLE_H
-#define TRAIN_SUPERVISED_ENSEMBLE_H
+#ifndef TRAIN_SUPERVISED_ENSEMBLE_DYNAMIC_H
+#define TRAIN_SUPERVISED_ENSEMBLE_DYNAMIC_H
 
 #include <iostream>
 #include <set>
@@ -10,7 +10,7 @@
 
 namespace po = boost::program_options;
 
-struct SupervisedEnsembleTrainer {
+struct SupervisedEnsembleDynamicTrainer {
   enum ROLLIN_POLICY_TYPE { kExpert, kEpsilonGreedy };
   enum OBJECTIVE_TYPE { kCrossEntropy, kSparseCrossEntropy };
   ROLLIN_POLICY_TYPE rollin_type;
@@ -24,10 +24,10 @@ struct SupervisedEnsembleTrainer {
 
   static po::options_description get_options();
 
-  SupervisedEnsembleTrainer(const po::variables_map& conf,
-                            const Noisifier& noisifier,
-                            ParserStateBuilder & state_builder,
-                            std::vector<ParserStateBuilder *>& pretrained_state_builders);
+  SupervisedEnsembleDynamicTrainer(const po::variables_map& conf,
+                                   const Noisifier& noisifier,
+                                   ParserStateBuilder & state_builder,
+                                   std::vector<ParserStateBuilder *>& pretrained_state_builders);
 
   /* Code for supervised pretraining. */
   void train(const po::variables_map& conf,
@@ -48,4 +48,4 @@ struct SupervisedEnsembleTrainer {
                          std::vector<dynet::expr::Expression> & loss);
 };
 
-#endif  //  end for TRAIN_SUPERVISED_H
+#endif  //  end for TRAIN_SUPERVISED_ENSEMBLE_DYNAMIC_H

@@ -1,21 +1,21 @@
 #include "trainer_utils.h"
-#include "train_supervised_ensemble.h"
+#include "train_supervised_ensemble_dynamic.h"
 #include "tree.h"
 #include "logging.h"
 #include "evaluate.h"
 #include "math_utils.h"
 
-po::options_description SupervisedEnsembleTrainer::get_options() {
-  po::options_description cmd("Supervised ensemble options");
+po::options_description SupervisedEnsembleDynamicTrainer::get_options() {
+  po::options_description cmd("Supervised dynamic ensemble options");
   cmd.add_options()
-    ("ensemble_rollin", po::value<std::string>()->default_value("egreedy"), "The type of rollin policy [expert|egreedy].")
-    ("ensemble_objective", po::value<std::string>()->default_value("crossentropy"), "The learning objective [crossentropy|sparse_crossentropy]")
-    ("ensemble_egreedy_epsilon", po::value<float>()->default_value(0.1f), "The epsilon for epsilon-greedy policy.")
+    ("dynamic_ensemble_rollin", po::value<std::string>()->default_value("egreedy"), "The type of rollin policy [expert|egreedy].")
+    ("dynamic_ensemble_objective", po::value<std::string>()->default_value("crossentropy"), "The learning objective [crossentropy|sparse_crossentropy]")
+    ("dynamic_ensemble_egreedy_epsilon", po::value<float>()->default_value(0.1f), "The epsilon for epsilon-greedy policy.")
     ;
   return cmd;
 }
 
-SupervisedEnsembleTrainer::SupervisedEnsembleTrainer(const po::variables_map& conf,
+SupervisedEnsembleDynamicTrainer::SupervisedEnsembleDynamicTrainer(const po::variables_map& conf,
                                                      const Noisifier& noisifier,
                                                      ParserStateBuilder & state_builder,
                                                      std::vector<ParserStateBuilder *>& pretrained_state_builders) :
@@ -24,17 +24,18 @@ SupervisedEnsembleTrainer::SupervisedEnsembleTrainer(const po::variables_map& co
   pretrained_state_builders(pretrained_state_builders),
   n_pretrained(pretrained_state_builders.size()) {
   lambda_ = conf["lambda"].as<float>();
-  _INFO << "ENS:: lambda = " << lambda_;
+  _INFO << "ENS_DYN:: lambda = " << lambda_;
 
-  if (conf["ensemble_rollin"].as<std::string>() == "egreedy") {
+  std::string rollin_name = conf["dynamic_ensemble_rollin"].as<std::string>();
+  if (rollin_name == "egreedy") {
     rollin_type = kEpsilonGreedy;
-  } else if (conf["ensemble_rollin"].as<std::string>() == "expert") {
+  } else if (rollin_name == "expert") {
     rollin_type = kExpert;
   } else {
-    _ERROR << "Unknown oracle :" << conf["ensemble_rollin"].as<std::string>();
+    _ERROR << "ENS_DYN:: Unknown oracle :" << rollin_name;
   }
 
-  std::string objective_name = conf["ensemble_objective"].as<std::string>();
+  std::string objective_name = conf["dynamic_ensemble_objective"].as<std::string>();
   if (objective_name == "crossentropy") {
     objective_type = kCrossEntropy;
   } else if (objective_name == "sparse_crossentropy") {
@@ -46,19 +47,19 @@ SupervisedEnsembleTrainer::SupervisedEnsembleTrainer(const po::variables_map& co
   _INFO << "ENS:: learning objective " << objective_name;
   
   if (rollin_type == kEpsilonGreedy) {
-    epsilon = conf["ensemble_egreedy_epsilon"].as<float>();
+    epsilon = conf["dynamic_ensemble_egreedy_epsilon"].as<float>();
     _INFO << "ENS:: epsilon for egreedy policy: " << epsilon;
   }
 }
 
-void SupervisedEnsembleTrainer::train(const po::variables_map& conf,
-                                      Corpus& corpus,
-                                      const std::string& name,
-                                      const std::string& output,
-                                      bool allow_nonprojective,
-                                      bool allow_partial_tree) {
+void SupervisedEnsembleDynamicTrainer::train(const po::variables_map& conf,
+                                             Corpus& corpus,
+                                             const std::string& name,
+                                             const std::string& output,
+                                             bool allow_nonprojective,
+                                             bool allow_partial_tree) {
   dynet::Model& model = state_builder.model;
-  _INFO << "ENS:: start lstm-parser supervised ensemble training.";
+  _INFO << "ENS_DYN:: start lstm-parser supervised ensemble training.";
 
   dynet::Trainer* trainer = get_trainer(conf, model);
   unsigned max_iter = conf["max_iter"].as<unsigned>();
@@ -73,10 +74,10 @@ void SupervisedEnsembleTrainer::train(const po::variables_map& conf,
   unsigned evaluate_stops = conf["evaluate_stops"].as<unsigned>();
   unsigned evaluate_skips = conf["evaluate_skips"].as<unsigned>();
 
-  _INFO << "ENS:: will stop after " << max_iter << " iterations.";
+  _INFO << "ENS_DYN:: will stop after " << max_iter << " iterations.";
   for (unsigned iter = 0; iter < max_iter; ++iter) {
     llh = 0;
-    _INFO << "ENS:: start training iteration #" << iter << ", shuffled.";
+    _INFO << "ENS_DYN:: start training iteration #" << iter << ", shuffled.";
     std::shuffle(order.begin(), order.end(), (*dynet::rndeng));
 
     for (unsigned sid : order) {
@@ -93,24 +94,24 @@ void SupervisedEnsembleTrainer::train(const po::variables_map& conf,
       ++logc; 
       if (logc % report_stops == 0) {
         float epoch = (float(logc) / n_train);
-        _INFO << "SUP:: iter #" << iter << " (epoch " << epoch << ") loss " << llh_in_batch;
+        _INFO << "ENS_DYN:: iter #" << iter << " (epoch " << epoch << ") loss " << llh_in_batch;
         llh_in_batch = 0.f;
       }
       if (iter >= evaluate_skips && logc % evaluate_stops == 0) {
         float f = evaluate(conf, corpus, state_builder, output);
         if (f > best_f) {
           best_f = f;
-          _INFO << "SUP:: new best record achieved: " << best_f << ", saved.";
+          _INFO << "ENS_DYN:: new best record achieved: " << best_f << ", saved.";
           dynet::save_dynet_model(name, (&model));
         }
       }
     }
 
-    _INFO << "SUP:: end of iter #" << iter << " loss " << llh;
+    _INFO << "ENS_DYN:: end of iter #" << iter << " loss " << llh;
     float f = evaluate(conf, corpus, state_builder, output);
     if (f > best_f) {
       best_f = f;
-      _INFO << "SUP:: new best record achieved: " << best_f << ", saved.";
+      _INFO << "ENS_DYN:: new best record achieved: " << best_f << ", saved.";
       dynet::save_dynet_model(name, (&model));
     }
     trainer->update_epoch();
@@ -120,7 +121,7 @@ void SupervisedEnsembleTrainer::train(const po::variables_map& conf,
   delete trainer;
 }
 
-void SupervisedEnsembleTrainer::add_loss_one_step(dynet::expr::Expression & score_expr,
+void SupervisedEnsembleDynamicTrainer::add_loss_one_step(dynet::expr::Expression & score_expr,
                                                   const std::vector<unsigned> & valid_actions,
                                                   const std::vector<float> & probs,
                                                   std::vector<dynet::expr::Expression> & loss) {
@@ -139,10 +140,10 @@ void SupervisedEnsembleTrainer::add_loss_one_step(dynet::expr::Expression & scor
   }
 }
 
-float SupervisedEnsembleTrainer::train_full_tree(const InputUnits& input_units,
-                                                 const ParseUnits& parse_units,
-                                                 dynet::Trainer* trainer,
-                                                 unsigned iter) {
+float SupervisedEnsembleDynamicTrainer::train_full_tree(const InputUnits& input_units,
+                                                        const ParseUnits& parse_units,
+                                                        dynet::Trainer* trainer,
+                                                        unsigned iter) {
   TransitionSystem & system = state_builder.system;
 
   std::vector<unsigned> ref_heads, ref_deprels;

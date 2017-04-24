@@ -286,3 +286,60 @@ void Corpus::get_vocabulary_and_word_count() {
     }
   }
 }
+
+CorpusWithActions::CorpusWithActions() : Corpus() {
+}
+
+void CorpusWithActions::load_training_actions(const std::string & filename) {
+  _INFO << "Corpus:: reading training actions from: " << filename;
+
+  std::ifstream in(filename);
+  BOOST_ASSERT_MSG(in, "Corpus:: failed to open the training file.");
+
+  n_train_actions = 0;
+  std::string data = "";
+  std::string line;
+  while (std::getline(in, line)) {
+    boost::algorithm::trim(line);
+    if (line.size() == 0) {
+      // end for an instance.
+      parse_data2(data, training_actions[n_train_actions]);
+      data = "";
+      ++n_train_actions;
+    } else {
+      data += (line + "\n");
+    }
+  }
+  if (data.size() > 0) {
+    parse_data2(data, training_actions[n_train_actions]);
+    ++n_train_actions;
+  }
+
+  _INFO << "Corpus:: loaded " << n_train_actions << " training actions.";
+}
+
+void CorpusWithActions::parse_data2(const std::string & data, ActionUnits & action_units) {
+  std::stringstream S(data);
+  std::string line;
+
+  std::getline(S, line);
+  action_units.train_id = boost::lexical_cast<unsigned>(line);
+  assert(action_units.train_id < n_train);
+
+  action_units.actions.clear();
+  ActionUnit action_unit;
+  while (std::getline(S, line)) {
+    boost::trim(line);
+
+    std::vector<std::string> tokens;
+    boost::split(tokens, line, boost::is_any_of(" \t"), boost::token_compress_on);
+
+    action_unit.action = boost::lexical_cast<unsigned>(tokens[0]);
+    action_unit.prob.clear();
+    for (unsigned i = 1; i < tokens.size(); ++i) {
+      action_unit.prob.push_back(boost::lexical_cast<float>(tokens[i]));
+    }
+
+    action_units.actions.push_back(action_unit);
+  }
+}

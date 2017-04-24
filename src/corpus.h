@@ -22,6 +22,16 @@ struct ParseUnit {
   unsigned deprel;
 };
 
+struct ActionUnit {
+  unsigned action;
+  std::vector<float> prob;
+};
+
+struct ActionUnits {
+  unsigned train_id;
+  std::vector<ActionUnit> actions;
+};
+
 typedef std::vector<InputUnit> InputUnits;
 typedef std::vector<ParseUnit> ParseUnits;
 typedef std::unordered_map<unsigned, std::vector<float>> Embeddings;
@@ -88,6 +98,18 @@ struct Corpus {
 
   void load_empty_embeddings(unsigned pretrained_dim,
                              Embeddings & pretrained);
+};
+
+struct CorpusWithActions : public Corpus {
+  unsigned n_train_actions;
+  std::vector<ActionUnits> training_actions;
+
+  CorpusWithActions();
+
+  void load_training_actions(const std::string & filename);
+
+  void parse_data2(const std::string & data,
+                   ActionUnits & action_units);
 };
 
 #endif  //  end for CORPUS_H
