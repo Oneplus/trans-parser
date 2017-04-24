@@ -125,7 +125,7 @@ void EnsembleStaticDataGenerator::generate(const po::variables_map & conf,
 
         softmax_inplace(ensembled_scores);
         ofs << action;
-        for (float s : ensembled_scores) { ofs << "\t" << s; }
+        for (float s : ensembled_scores) { ofs << " " << s; }
         ofs << std::endl;
         system.perform_action(transition_state, action);
         for (ParserState * ensembled_parser_state : ensembled_parser_states) {

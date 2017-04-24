@@ -87,8 +87,10 @@ int main(int argc, char** argv) {
     model_name = get_model_name(conf, prefix);
     _INFO << "Main:: write parameters to: " << model_name;
   } else {
-    model_name = conf["model"].as<std::string>();
-    _INFO << "Main:: evaluating model from: " << model_name;
+    if (!conf.count("generate_ensemble_data")) {
+      model_name = conf["model"].as<std::string>();
+      _INFO << "Main:: evaluating model from: " << model_name;
+    }
   }
 
   bool allow_partial_tree = conf["partial"].as<bool>();
