@@ -144,7 +144,7 @@ int main(int argc, char** argv) {
 
   if (conf.count("train")) {
     Noisifier noisifier(conf, corpus);
-    SupervisedEnsembleTrainer trainer(conf, noisifier, *state_builder, pretrained_state_builders);
+    SupervisedEnsembleDynamicTrainer trainer(conf, noisifier, *state_builder, pretrained_state_builders);
     trainer.train(conf, corpus, model_name, output, allow_non_projective, allow_partial_tree);
   }
 

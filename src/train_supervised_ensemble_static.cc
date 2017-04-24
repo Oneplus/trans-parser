@@ -1,3 +1,4 @@
+#include "train_supervised_ensemble_static.h"
 #include "trainer_utils.h"
 #include "train_supervised_ensemble_static.h"
 #include "logging.h"
@@ -106,4 +107,18 @@ float SupervisedEnsembleStaticTrainer::train_full_tree(const InputUnits & input_
   }
   delete parser_state;
   return ret;
+}
+
+void SupervisedEnsembleStaticTrainer::add_loss_one_step(dynet::expr::Expression & score_expr,
+                                                        const std::vector<unsigned>& valid_actions,
+                                                        const std::vector<float>& probs,
+                                                        std::vector<dynet::expr::Expression>& loss) {
+  TransitionSystem & system = state_builder.system;
+  unsigned illegal_action = system.num_actions();
+
+  unsigned n_probs = probs.size();
+  loss.push_back(-dynet::dot_product(
+    dynet::expr::input(*score_expr.pg, { n_probs }, probs),
+    dynet::expr::log_softmax(score_expr)
+  ));
 }
