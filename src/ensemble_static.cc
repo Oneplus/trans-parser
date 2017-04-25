@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
   
   dynet::Model * model = nullptr;
   ParserStateBuilder * state_builder = nullptr;
-  if (conf.count("train")) {
+  if (!conf.count("generate_ensemble_data")) {
     model = new dynet::Model;
     state_builder = get_state_builder(conf, *model, *sys, corpus, pretrained);
   }
