@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
     std::string prefix("parser_l2r.model");
     model_name = get_model_name(conf, prefix);
     _INFO << "Main:: write parameters to: " << model_name;
-  } else {
+  } else if (!conf.count("test_ensemble")) {
     model_name = conf["model"].as<std::string>();
     _INFO << "Main:: evaluating model from: " << model_name;
   }

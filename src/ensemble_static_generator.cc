@@ -9,7 +9,6 @@ po::options_description EnsembleStaticDataGenerator::get_options() {
   cmd.add_options()
     ("static_ensemble_n_sample", po::value<unsigned>()->default_value(1), "The number of sample.")
     ("static_ensemble_rollin", po::value<std::string>()->default_value("expert"), "The type of rollin policy [expert|egreedy|boltzmann].")
-    ("static_ensemble_objective", po::value<std::string>()->default_value("crossentropy"), "The learning objective [crossentropy|sparse_crossentropy]")
     ("static_ensemble_egreedy_epsilon", po::value<float>()->default_value(0.1f), "The epsilon for epsilon-greedy policy.")
     ("static_ensemble_boltzmann_temperature", po::value<float>()->default_value(1.f), "The epsilon for epsilon-greedy policy.")
     ;
@@ -52,7 +51,6 @@ void EnsembleStaticDataGenerator::generate(const po::variables_map & conf,
   _INFO << "GEN:: start lstm-parser supervised ensemble training data generation.";
   TransitionSystem & system = pretrained_state_builders[0]->system;
 
-  unsigned max_iter = conf["max_iter"].as<unsigned>();
   unsigned logc = 0;
   unsigned report_stops = conf["report_stops"].as<unsigned>();
   unsigned n_train = corpus.n_train;

@@ -144,8 +144,6 @@ void SupervisedEnsembleStaticTrainer::add_loss_one_step(dynet::expr::Expression 
                                                         const std::vector<unsigned>& valid_actions,
                                                         const std::vector<float>& probs,
                                                         std::vector<dynet::expr::Expression>& loss) {
-  TransitionSystem & system = state_builder.system;
-
   unsigned n_probs = probs.size();
   loss.push_back(-dynet::dot_product(
     dynet::expr::input(*score_expr.pg, { n_probs }, probs),
