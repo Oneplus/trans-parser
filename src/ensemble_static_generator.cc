@@ -55,8 +55,6 @@ void EnsembleStaticDataGenerator::generate(const po::variables_map & conf,
   unsigned max_iter = conf["max_iter"].as<unsigned>();
   unsigned logc = 0;
   unsigned report_stops = conf["report_stops"].as<unsigned>();
-  unsigned evaluate_stops = conf["evaluate_stops"].as<unsigned>();
-  unsigned evaluate_skips = conf["evaluate_skips"].as<unsigned>();
   unsigned n_train = corpus.n_train;
 
   std::ofstream ofs(output);

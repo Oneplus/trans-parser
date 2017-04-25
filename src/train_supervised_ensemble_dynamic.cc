@@ -20,8 +20,8 @@ SupervisedEnsembleDynamicTrainer::SupervisedEnsembleDynamicTrainer(const po::var
                                                      ParserStateBuilder & state_builder,
                                                      std::vector<ParserStateBuilder *>& pretrained_state_builders) :
   state_builder(state_builder),
-  noisifier(noisifier),
   pretrained_state_builders(pretrained_state_builders),
+  noisifier(noisifier),
   n_pretrained(pretrained_state_builders.size()) {
   lambda_ = conf["lambda"].as<float>();
   _INFO << "ENS_DYN:: lambda = " << lambda_;

@@ -116,20 +116,20 @@ int main(int argc, char** argv) {
   TransitionSystem* sys = TransitionSystemBuilder(corpus).build(conf);
   bool allow_non_projective = TransitionSystemBuilder::allow_nonprojective(conf);
 
-  std::vector<std::string> pretrained_model_paths;
-  std::string pretrained_model_path = conf["models"].as<std::string>();
-  boost::split(pretrained_model_paths, pretrained_model_path, boost::is_any_of(","), boost::token_compress_on);
-
-  unsigned n_engines = pretrained_model_paths.size();
-  assert(n_engines > 0);
-
-  std::vector<dynet::Model*> pretrained_models(n_engines, nullptr);
-  std::vector<ParserStateBuilder*> pretrained_state_builders(n_engines, nullptr);
+  unsigned n_engines = 0;
+  std::vector<dynet::Model*> pretrained_models;
+  std::vector<ParserStateBuilder*> pretrained_state_builders;
 
   if (conf.count("generate_ensemble_data")) {
+    std::vector<std::string> pretrained_model_paths;
+    std::string pretrained_model_path = conf["models"].as<std::string>();
+    boost::split(pretrained_model_paths, pretrained_model_path, boost::is_any_of(","), boost::token_compress_on);
+
+    n_engines = pretrained_model_paths.size();
+    assert(n_engines > 0);
     for (unsigned i = 0; i < n_engines; ++i) {
-      pretrained_models[i] = new dynet::Model;
-      pretrained_state_builders[i] = get_state_builder(conf, *(pretrained_models[i]), *sys, corpus, pretrained);
+      pretrained_models.push_back(new dynet::Model);
+      pretrained_state_builders.push_back(get_state_builder(conf, *(pretrained_models[i]), *sys, corpus, pretrained));
       dynet::load_dynet_model(pretrained_model_paths[i], pretrained_models[i]);
     }
   }
