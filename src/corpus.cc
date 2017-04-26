@@ -260,6 +260,27 @@ void Corpus::load_word_list(const std::string & word_list_file) {
   }
 }
 
+void Corpus::load_pos_list(const std::string & pos_list_file) {
+  if (!pos_map.contains(Corpus::ROOT)) {
+    pos_map.insert(Corpus::ROOT);
+  }
+  std::ifstream ifs(pos_list_file);
+  std::string pos;
+  while (std::getline(ifs, pos)) {
+    boost::trim(pos);
+    pos_map.insert(pos);
+  }
+}
+
+void Corpus::load_deprel_list(const std::string & deprel_list_file) {
+  std::ifstream ifs(deprel_list_file);
+  std::string deprel;
+  while (std::getline(ifs, deprel)) {
+    boost::trim(deprel);
+    deprel_map.insert(deprel);
+  }
+}
+
 void Corpus::load_word_embeddings(const std::string & embedding_file,
                                   unsigned pretrained_dim,
                                   Embeddings & pretrained) {

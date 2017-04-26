@@ -21,6 +21,8 @@ void init_command_line(int argc, char* argv[], po::variables_map& conf) {
   general.add_options()
     ("train,t", "Use to specify to perform training.")
     ("word_list", po::value<std::string>(), "(Optional) The path to the word list.")
+    ("pos_list", po::value<std::string>(), "(Optional) The path to the pos list.")
+    ("deprel_list", po::value<std::string>(), "(Optional) The path to the deprel list.")
     ("architecture", po::value<std::string>()->default_value("d15"), "The architecture [dyer15, ballesteros15, kiperwasser16].")
     ("training_data,T", po::value<std::string>()->required(), "The path to the training data.")
     ("devel_data,d", po::value<std::string>()->required(), "The path to the development data.")
@@ -95,9 +97,9 @@ int main(int argc, char** argv) {
 
   bool allow_partial_tree = conf["partial"].as<bool>();
   Corpus corpus;
-  if (conf.count("word_list")) {
-    corpus.load_word_list(conf["word_list"].as<std::string>());
-  }
+  if (conf.count("word_list")) { corpus.load_word_list(conf["word_list"].as<std::string>()); }
+  if (conf.count("pos_list")) { corpus.load_pos_list(conf["pos_list"].as<std::string>()); }
+  if (conf.count("deprel_list")) { corpus.load_deprel_list(conf["deprel_list"].as<std::string>()); }
   std::unordered_map<unsigned, std::vector<float>> pretrained;
   if (conf.count("pretrained")) {
     corpus.load_word_embeddings(conf["pretrained"].as<std::string>(),

@@ -94,6 +94,10 @@ struct Corpus {
 
   void load_word_list(const std::string & word_list_file);
 
+  void load_pos_list(const std::string & pos_list_file);
+
+  void load_deprel_list(const std::string & deprel_list_file);
+
   void load_word_embeddings(const std::string& embedding_file,
                             unsigned pretrained_dim,
                             Embeddings & pretrained);
