@@ -81,9 +81,8 @@ void Swap::get_oracle_actions(const std::vector<unsigned>& ref_heads,
   std::vector<unsigned> orders(N, Corpus::BAD_HED);
   get_oracle_actions_calculate_orders(root, tree, orders, timestamp);
 
-
-  // std::vector<unsigned> mpc(N, 0);
-  // get_oracle_actions_calculate_mpc(root, tree, mpc);
+  std::vector<unsigned> mpc(N, 0);
+  get_oracle_actions_calculate_mpc(root, tree, mpc);
 
   std::vector<unsigned> sigma;
   std::vector<unsigned> beta;
@@ -91,14 +90,10 @@ void Swap::get_oracle_actions(const std::vector<unsigned>& ref_heads,
   for (int i = N - 1; i >= 0; --i) { beta.push_back(i); }
 
   while (!(sigma.size() == 1 && beta.empty())) {
-    /*get_oracle_actions_onestep_improved(ref_heads, ref_deprels,
+    get_oracle_actions_onestep_improved(ref_heads, ref_deprels,
                                         tree, orders, mpc,
                                         sigma, beta, heads,
-                                        actions);*/
-    get_oracle_actions_onestep(ref_heads, ref_deprels,
-                               tree, orders,
-                               sigma, beta, heads,
-                               actions);
+                                        actions);
   }
 }
 
@@ -347,6 +342,15 @@ bool Swap::is_valid_action(const TransitionState& state, const unsigned& act) co
   if (is_swap && (state.stack.size() < 3 || state.buffer.size() == 1)) { return false; }
   if (is_swap && state.stack[state.stack.size() - 2] > state.stack.back()) { return false; }
   if (is_reduce && state.stack.size() < 3) { return false; }
+  if (state.buffer.size() > 1 && is_reduce) {
+    if (act == left_root || act == right_root) { return false; }
+  }
+  if (state.buffer.size() == 2 && state.stack.size() > 2 && is_shift) {
+    return false;
+  }
+  if (state.buffer.size() == 1 && state.stack.size() == 3 && act != left_root) {
+    return false;
+  }
   return true;
 }
 
