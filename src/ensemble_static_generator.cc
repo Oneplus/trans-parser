@@ -57,9 +57,9 @@ void EnsembleStaticDataGenerator::generate(const po::variables_map & conf,
 
   std::ofstream ofs(output);
   ofs << "num_actions=" << system.num_actions() << std::endl;
-  for (unsigned sid = 0; sid < corpus.n_train; ++sid) {
-    InputUnits& input_units = corpus.training_inputs[sid];
-    const ParseUnits& parse_units = corpus.training_parses[sid];
+  for (unsigned sid = 0; sid < corpus.n_devel; ++sid) {
+    InputUnits& input_units = corpus.devel_inputs[sid];
+    const ParseUnits& parse_units = corpus.devel_parses[sid];
     if (!allow_nonprojective && DependencyUtils::is_non_projective(parse_units)) {
       continue;
     }
