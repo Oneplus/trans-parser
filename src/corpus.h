@@ -92,6 +92,8 @@ struct Corpus {
   unsigned get_or_add_word(const std::string& word);
   void stat();
 
+  void load_word_list(const std::string & word_list_file);
+
   void load_word_embeddings(const std::string& embedding_file,
                             unsigned pretrained_dim,
                             Embeddings & pretrained);

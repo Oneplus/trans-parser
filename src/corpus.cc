@@ -1,4 +1,5 @@
 #include "corpus.h"
+#include "corpus.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -243,6 +244,20 @@ void Corpus::stat() {
   _INFO << "Corpus:: # of char = " << char_map.size();
   _INFO << "Corpus:: # of pos = " << pos_map.size();
   _INFO << "Corpus:: # of deprel = " << deprel_map.size();
+}
+
+void Corpus::load_word_list(const std::string & word_list_file) {
+  if (!word_map.contains(Corpus::BAD0)) {
+    word_map.insert(Corpus::BAD0);
+    word_map.insert(Corpus::UNK);
+    word_map.insert(Corpus::ROOT);
+  }
+  std::ifstream ifs(word_list_file);
+  std::string word;
+  while (std::getline(ifs, word)) {
+    boost::trim(word);
+    word_map.insert(word);
+  }
 }
 
 void Corpus::load_word_embeddings(const std::string & embedding_file,
