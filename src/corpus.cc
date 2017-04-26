@@ -256,7 +256,7 @@ void Corpus::load_word_list(const std::string & word_list_file) {
   std::string word;
   while (std::getline(ifs, word)) {
     boost::trim(word);
-    word_map.insert(word);
+    training_vocab.insert(word_map.insert(word));
   }
 }
 
