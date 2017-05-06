@@ -11,8 +11,10 @@
 namespace po = boost::program_options;
 
 struct SupervisedEnsembleDynamicTrainer {
-  enum ROLLIN_POLICY_TYPE { kExpert, kEpsilonGreedy };
+  enum ENSEMBLE_METHOD_TYPE { kProbability, kLogitsMean, kLogitsSum };
+  enum ROLLIN_POLICY_TYPE { kExpert, kEpsilonGreedy, kBoltzmann };
   enum OBJECTIVE_TYPE { kCrossEntropy, kSparseCrossEntropy };
+  ENSEMBLE_METHOD_TYPE ensemble_method;
   ROLLIN_POLICY_TYPE rollin_type;
   OBJECTIVE_TYPE objective_type;
   ParserStateBuilder & state_builder;
@@ -20,6 +22,7 @@ struct SupervisedEnsembleDynamicTrainer {
   const Noisifier& noisifier;
   float lambda_;
   float epsilon;
+  float temperature;
   unsigned n_pretrained;
 
   static po::options_description get_options();

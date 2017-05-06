@@ -102,20 +102,25 @@ void EnsembleStaticDataGenerator::generate(const po::variables_map & conf,
         std::vector<unsigned> valid_actions;
         system.get_valid_actions(transition_state, valid_actions);
 
-        std::vector<float> ensembled_scores(system.num_actions(), 0.f);
+        std::vector<float> ensembled_probs(system.num_actions(), 0.f);
         for (ParserState* ensembled_parser_state : ensembled_parser_states) {
           dynet::expr::Expression ensembled_score_exprs = ensembled_parser_state->get_scores();
           std::vector<float> ensembled_score = dynet::as_vector(cg.get_value(ensembled_score_exprs));
           if (ensemble_method == kProbability) { softmax_inplace(ensembled_score); }
           for (unsigned i = 0; i < ensembled_score.size(); ++i) {
-            ensembled_scores[i] += ensembled_score[i];
+            ensembled_probs[i] += ensembled_score[i];
           }
         }
         if (ensemble_method == kProbability || ensemble_method == kLogitsMean) {
-          for (unsigned i = 0; i < ensembled_scores.size(); ++i) {
-            ensembled_scores[i] /= n_pretrained;
+          for (unsigned i = 0; i < ensembled_probs.size(); ++i) {
+            ensembled_probs[i] /= n_pretrained;
           }
         }
+
+        if (ensemble_method == kLogitsMean || ensemble_method == kLogitsSum) {
+          softmax_inplace(ensembled_probs);
+        }
+        // ensembled_probs shows probability.
 
         unsigned action = UINT_MAX;
         if (rollin_type == kExpert) {
@@ -125,24 +130,21 @@ void EnsembleStaticDataGenerator::generate(const po::variables_map & conf,
           if (seed < epsilon) {
             action = valid_actions[dynet::rand0n(valid_actions.size())];
           } else {
-            auto payload = ParserState::get_best_action(ensembled_scores, valid_actions);
+            auto payload = ParserState::get_best_action(ensembled_probs, valid_actions);
             action = payload.first;
           }
         } else {
           std::vector<float> valid_prob;
           for (unsigned act : valid_actions) {
-            valid_prob.push_back(ensembled_scores[act] / temperature);
+            valid_prob.push_back(log(ensembled_probs[act]) / temperature);
           }
           softmax_inplace(valid_prob);
           unsigned index = distribution_sample(valid_prob, (*dynet::rndeng));
           action = valid_actions[index];
         }
 
-        if (ensemble_method == kLogitsMean || ensemble_method == kLogitsSum) {
-          softmax_inplace(ensembled_scores);
-        }
         ofs << action;
-        for (float s : ensembled_scores) { ofs << " " << s; }
+        for (float s : ensembled_probs) { ofs << " " << s; }
         ofs << std::endl;
         system.perform_action(transition_state, action);
         for (ParserState * ensembled_parser_state : ensembled_parser_states) {

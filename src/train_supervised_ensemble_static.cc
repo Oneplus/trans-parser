@@ -12,6 +12,7 @@ SupervisedEnsembleStaticTrainer::SupervisedEnsembleStaticTrainer(const po::varia
   state_builder(state_builder),
   noisifier(noisifier) {
   lambda_ = conf["lambda"].as<float>();
+  _INFO << "ENS_STAT:: lambda = " << lambda_;
 }
 
 void SupervisedEnsembleStaticTrainer::train(const po::variables_map & conf, 

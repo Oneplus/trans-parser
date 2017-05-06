@@ -8,9 +8,11 @@
 po::options_description SupervisedEnsembleDynamicTrainer::get_options() {
   po::options_description cmd("Supervised dynamic ensemble options");
   cmd.add_options()
-    ("dynamic_ensemble_rollin", po::value<std::string>()->default_value("egreedy"), "The type of rollin policy [expert|egreedy].")
+    ("dynamic_ensemble_method", po::value<std::string>()->default_value("prob"), "Ensemble methods [prob|logits_mean|logits_sum]")
+    ("dynamic_ensemble_rollin", po::value<std::string>()->default_value("egreedy"), "The type of rollin policy [egreedy|boltzmann].")
     ("dynamic_ensemble_objective", po::value<std::string>()->default_value("crossentropy"), "The learning objective [crossentropy|sparse_crossentropy]")
     ("dynamic_ensemble_egreedy_epsilon", po::value<float>()->default_value(0.1f), "The epsilon for epsilon-greedy policy.")
+    ("dynamic_ensemble_boltzmann_temperature", po::value<float>()->default_value(1.f), "The epsilon for epsilon-greedy policy.")
     ;
   return cmd;
 }
@@ -25,6 +27,16 @@ SupervisedEnsembleDynamicTrainer::SupervisedEnsembleDynamicTrainer(const po::var
   n_pretrained(pretrained_state_builders.size()) {
   lambda_ = conf["lambda"].as<float>();
   _INFO << "ENS_DYN:: lambda = " << lambda_;
+
+  std::string ensemble_method_name = conf["static_ensemble_method"].as<std::string>();
+  if (ensemble_method_name == "prob") {
+    ensemble_method = kProbability;
+  } else if (ensemble_method_name == "logits_mean") {
+    ensemble_method = kLogitsMean;
+  } else {
+    ensemble_method = kLogitsSum;
+  }
+  _INFO << "ENS_DYN:: ensemble method: " << ensemble_method_name;
 
   std::string rollin_name = conf["dynamic_ensemble_rollin"].as<std::string>();
   if (rollin_name == "egreedy") {
@@ -41,14 +53,17 @@ SupervisedEnsembleDynamicTrainer::SupervisedEnsembleDynamicTrainer(const po::var
   } else if (objective_name == "sparse_crossentropy") {
     objective_type = kSparseCrossEntropy;
   } else {
-    _ERROR << "ENS:: unknown objective" << objective_name;
+    _ERROR << "ENS_DYN:: unknown objective" << objective_name;
     exit(1);
   }                                                                       
-  _INFO << "ENS:: learning objective " << objective_name;
+  _INFO << "ENS_DYN:: learning objective " << objective_name;
   
   if (rollin_type == kEpsilonGreedy) {
     epsilon = conf["dynamic_ensemble_egreedy_epsilon"].as<float>();
     _INFO << "ENS:: epsilon for egreedy policy: " << epsilon;
+  } else if (rollin_type == kBoltzmann) {
+    temperature = conf["dynamic_ensemble_boltzmann_temperature"].as<float>();
+    _INFO << "ENS_DYN:: temperature for boltzmann policy: " << temperature;
   }
 }
 
@@ -126,8 +141,6 @@ void SupervisedEnsembleDynamicTrainer::add_loss_one_step(dynet::expr::Expression
                                                   const std::vector<float> & probs,
                                                   std::vector<dynet::expr::Expression> & loss) {
   TransitionSystem & system = state_builder.system;
-  unsigned illegal_action = system.num_actions();
-
   if (objective_type == kSparseCrossEntropy) {
     auto best = ParserState::get_best_action(probs, valid_actions);
     loss.push_back(dynet::expr::pickneglogsoftmax(score_expr, best.first));
@@ -183,15 +196,19 @@ float SupervisedEnsembleDynamicTrainer::train_full_tree(const InputUnits& input_
     for (ParserState* ensembled_parser_state : ensembled_parser_states) {
       dynet::expr::Expression ensembled_score_exprs = ensembled_parser_state->get_scores();
       std::vector<float> ensembled_score = dynet::as_vector(cg.get_value(ensembled_score_exprs));
+      if (ensemble_method == kProbability) { softmax_inplace(ensembled_score); }
       for (unsigned i = 0; i < ensembled_score.size(); ++i) {
         ensembled_scores[i] += ensembled_score[i];
       }
     }
-    for (unsigned i = 0; i < ensembled_scores.size(); ++i) {
-      ensembled_scores[i] /= n_pretrained;
+    if (ensemble_method == kProbability || ensemble_method == kLogitsMean) {
+      for (unsigned i = 0; i < ensembled_scores.size(); ++i) {
+        ensembled_scores[i] /= n_pretrained;
+      }
     }
-    softmax_inplace(ensembled_scores);
-
+    if (ensemble_method == kLogitsMean || ensemble_method == kLogitsSum) {
+      softmax_inplace(ensembled_scores);
+    }
     add_loss_one_step(score_exprs, valid_actions, ensembled_scores, loss);
 
     unsigned action = UINT_MAX;
