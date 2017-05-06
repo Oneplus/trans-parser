@@ -9,7 +9,9 @@
 #include "noisify.h"
 
 struct EnsembleStaticDataGenerator {
+  enum ENSEMBLE_METHOD_TYPE { kProbability, kLogitsMean, kLogitsSum };
   enum ROLLIN_POLICY_TYPE { kExpert, kEpsilonGreedy, kBoltzmann };
+  ENSEMBLE_METHOD_TYPE ensemble_method;
   ROLLIN_POLICY_TYPE rollin_type;
   std::vector<ParserStateBuilder *>& pretrained_state_builders;
   float epsilon;

@@ -7,6 +7,7 @@
 po::options_description EnsembleStaticDataGenerator::get_options() {
   po::options_description cmd("Supervised dynamic ensemble options");
   cmd.add_options()
+    ("static_ensemble_method", po::value<std::string>()->default_value("prob"), "Ensemble methods [prob|logits_mean|logits_sum]")
     ("static_ensemble_n_sample", po::value<unsigned>()->default_value(1), "The number of sample.")
     ("static_ensemble_rollin", po::value<std::string>()->default_value("expert"), "The type of rollin policy [expert|egreedy|boltzmann].")
     ("static_ensemble_egreedy_epsilon", po::value<float>()->default_value(0.1f), "The epsilon for epsilon-greedy policy.")
@@ -20,6 +21,16 @@ EnsembleStaticDataGenerator::EnsembleStaticDataGenerator(const po::variables_map
   pretrained_state_builders(pretrained_state_builders) {
   n_pretrained = pretrained_state_builders.size();
   _INFO << "GEN:: number of parsers: " << n_pretrained;
+
+  std::string ensemble_method_name = conf["static_ensemble_method"].as<std::string>();
+  if (ensemble_method_name == "prob") {
+    ensemble_method = kProbability;
+  } else if (ensemble_method_name == "logits_mean") {
+    ensemble_method = kLogitsMean;
+  } else {
+    ensemble_method = kLogitsSum;
+  }
+  _INFO << "GEN:: ensemble method: " << ensemble_method_name;
 
   n_sample = conf["static_ensemble_n_sample"].as<unsigned>();
   _INFO << "GEN:: generate # samples " << n_sample;
@@ -53,7 +64,7 @@ void EnsembleStaticDataGenerator::generate(const po::variables_map & conf,
 
   unsigned logc = 0;
   unsigned report_stops = conf["report_stops"].as<unsigned>();
-  unsigned n_train = corpus.n_train;
+  unsigned n_devel = corpus.n_devel;
 
   std::ofstream ofs(output);
   ofs << "num_actions=" << system.num_actions() << std::endl;
@@ -61,6 +72,7 @@ void EnsembleStaticDataGenerator::generate(const po::variables_map & conf,
     InputUnits& input_units = corpus.devel_inputs[sid];
     const ParseUnits& parse_units = corpus.devel_parses[sid];
     if (!allow_nonprojective && DependencyUtils::is_non_projective(parse_units)) {
+      _INFO << "ENS_STAT:: sentence " << sid << " is nonprojective.";
       continue;
     }
 
@@ -94,12 +106,15 @@ void EnsembleStaticDataGenerator::generate(const po::variables_map & conf,
         for (ParserState* ensembled_parser_state : ensembled_parser_states) {
           dynet::expr::Expression ensembled_score_exprs = ensembled_parser_state->get_scores();
           std::vector<float> ensembled_score = dynet::as_vector(cg.get_value(ensembled_score_exprs));
+          if (ensemble_method == kProbability) { softmax_inplace(ensembled_score); }
           for (unsigned i = 0; i < ensembled_score.size(); ++i) {
             ensembled_scores[i] += ensembled_score[i];
           }
         }
-        for (unsigned i = 0; i < ensembled_scores.size(); ++i) {
-          ensembled_scores[i] /= n_pretrained;
+        if (ensemble_method == kProbability || ensemble_method == kLogitsMean) {
+          for (unsigned i = 0; i < ensembled_scores.size(); ++i) {
+            ensembled_scores[i] /= n_pretrained;
+          }
         }
 
         unsigned action = UINT_MAX;
@@ -123,7 +138,9 @@ void EnsembleStaticDataGenerator::generate(const po::variables_map & conf,
           action = valid_actions[index];
         }
 
-        softmax_inplace(ensembled_scores);
+        if (ensemble_method == kLogitsMean || ensemble_method == kLogitsSum) {
+          softmax_inplace(ensembled_scores);
+        }
         ofs << action;
         for (float s : ensembled_scores) { ofs << " " << s; }
         ofs << std::endl;
@@ -140,7 +157,7 @@ void EnsembleStaticDataGenerator::generate(const po::variables_map & conf,
 
     ++logc;
     if (logc % report_stops == 0) {
-      float epoch = (float(logc) / n_train);
+      float epoch = (float(logc) / n_devel);
       _INFO << "GEN:: finished " << epoch << " data.";
     }
   }
