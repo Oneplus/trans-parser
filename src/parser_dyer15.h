@@ -2,10 +2,11 @@
 #define PARSER_DYER15_H
 
 #include "parser.h"
-#include "layer.h"
 #include "corpus.h"
 #include "state.h"
 #include "system.h"
+#include "dynet/lstm.h"
+#include "dynet_layer/layer.h"
 #include <vector>
 #include <unordered_map>
 #include <boost/program_options.hpp>
@@ -13,9 +14,9 @@
 namespace po = boost::program_options;
 
 struct Dyer15ParserModel : public ParserModel {
-  dynet::LSTMBuilder s_lstm;
-  dynet::LSTMBuilder q_lstm;
-  dynet::LSTMBuilder a_lstm;
+  dynet::CoupledLSTMBuilder s_lstm;
+  dynet::CoupledLSTMBuilder q_lstm;
+  dynet::CoupledLSTMBuilder a_lstm;
 
   SymbolEmbedding word_emb;
   SymbolEmbedding pos_emb;
@@ -31,9 +32,9 @@ struct Dyer15ParserModel : public ParserModel {
   dynet::Parameter p_action_start;  // start of action
   dynet::Parameter p_buffer_guard;  // end of buffer
   dynet::Parameter p_stack_guard;   // end of stack
-  dynet::expr::Expression action_start;
-  dynet::expr::Expression buffer_guard;
-  dynet::expr::Expression stack_guard;
+  dynet::Expression action_start;
+  dynet::Expression buffer_guard;
+  dynet::Expression stack_guard;
 
   const Embeddings & pretrained;
 
@@ -60,7 +61,7 @@ struct Dyer15ParserModel : public ParserModel {
 
   void new_graph(dynet::ComputationGraph & cg) override;
 
-  std::vector<dynet::expr::Expression> get_params() override;
+  std::vector<dynet::Expression> get_params() override;
 };
 
 struct Dyer15ParserState : public ParserState {
@@ -70,8 +71,8 @@ struct Dyer15ParserState : public ParserState {
   dynet::RNNPointer s_pointer;
   dynet::RNNPointer q_pointer;
   dynet::RNNPointer a_pointer;
-  std::vector<dynet::expr::Expression> stack;
-  std::vector<dynet::expr::Expression> buffer;
+  std::vector<dynet::Expression> stack;
+  std::vector<dynet::Expression> buffer;
   ActionPerformer * performer;
 
   struct ActionPerformer {
@@ -125,9 +126,9 @@ struct Dyer15ParserState : public ParserState {
 
   ParserState * copy() override;
 
-  dynet::expr::Expression get_scores() override;
+  dynet::Expression get_scores() override;
 
-  std::vector<dynet::expr::Expression> get_params() override;
+  std::vector<dynet::Expression> get_params() override;
 };
 
 struct Dyer15ParserStateBuilder : public ParserStateBuilder {

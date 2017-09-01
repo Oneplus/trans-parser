@@ -104,7 +104,7 @@ void EnsembleStaticDataGenerator::generate(const po::variables_map & conf,
 
         std::vector<float> ensembled_probs(system.num_actions(), 0.f);
         for (ParserState* ensembled_parser_state : ensembled_parser_states) {
-          dynet::expr::Expression ensembled_score_exprs = ensembled_parser_state->get_scores();
+          dynet::Expression ensembled_score_exprs = ensembled_parser_state->get_scores();
           std::vector<float> ensembled_score = dynet::as_vector(cg.get_value(ensembled_score_exprs));
           if (ensemble_method == kProbability) { softmax_inplace(ensembled_score); }
           for (unsigned i = 0; i < ensembled_score.size(); ++i) {

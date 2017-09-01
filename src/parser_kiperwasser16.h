@@ -2,16 +2,17 @@
 #define PARSER_KIPERWASSER_H
 
 #include "parser.h"
-#include "layer.h"
 #include "corpus.h"
 #include "state.h"
 #include "system.h"
+#include "dynet/lstm.h"
+#include "dynet_layer/layer.h"
 #include <vector>
 #include <unordered_map>
 
 struct Kiperwasser16ParserModel : public ParserModel {
-  dynet::LSTMBuilder fwd_lstm;
-  dynet::LSTMBuilder bwd_lstm;
+  dynet::CoupledLSTMBuilder fwd_lstm;
+  dynet::CoupledLSTMBuilder bwd_lstm;
   SymbolEmbedding word_emb;
   SymbolEmbedding pos_emb;
   SymbolEmbedding preword_emb;
@@ -23,9 +24,9 @@ struct Kiperwasser16ParserModel : public ParserModel {
   dynet::Parameter p_empty;
   dynet::Parameter p_fwd_guard;   // start of fwd
   dynet::Parameter p_bwd_guard;   // end of bwd
-  dynet::expr::Expression empty;
-  dynet::expr::Expression fwd_guard;
-  dynet::expr::Expression bwd_guard;
+  dynet::Expression empty;
+  dynet::Expression fwd_guard;
+  dynet::Expression bwd_guard;
 
   const Embeddings & pretrained;
 
@@ -48,18 +49,18 @@ struct Kiperwasser16ParserModel : public ParserModel {
 
   void new_graph(dynet::ComputationGraph & cg) override;
 
-  std::vector<dynet::expr::Expression> get_params() override;
+  std::vector<dynet::Expression> get_params() override;
 };
 
 struct Kiperwasser16ParserState : public ParserState {
   struct FeatureExtractor;
 
   Kiperwasser16ParserModel & model;
-  std::vector<dynet::expr::Expression> encoded;
-  dynet::expr::Expression f0;
-  dynet::expr::Expression f1;
-  dynet::expr::Expression f2;
-  dynet::expr::Expression f3;
+  std::vector<dynet::Expression> encoded;
+  dynet::Expression f0;
+  dynet::Expression f1;
+  dynet::Expression f2;
+  dynet::Expression f3;
   FeatureExtractor * extractor;
 
   struct FeatureExtractor {
@@ -109,9 +110,9 @@ struct Kiperwasser16ParserState : public ParserState {
 
   ParserState * copy() override;
 
-  dynet::expr::Expression get_scores() override;
+  dynet::Expression get_scores() override;
 
-  std::vector<dynet::expr::Expression> get_params() override;
+  std::vector<dynet::Expression> get_params() override;
 };
 
 struct Kiperwasser16ParserStateBuilder : public ParserStateBuilder {

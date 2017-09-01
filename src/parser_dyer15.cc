@@ -48,7 +48,7 @@ Dyer15ParserModel::Dyer15ParserModel(dynet::Model& m,
   size_l(size_l), dim_l(dim_l), size_a(size_a), dim_a(dim_a),
   n_layers(n_layers), dim_lstm_in(dim_lstm_in), dim_hidden(dim_hidden) {
   for (auto it : pretrained) {
-    preword_emb.p_labels.initialize(it.first, it.second);
+    preword_emb.p_e.initialize(it.first, it.second);
   }
 }
 
@@ -68,13 +68,13 @@ void Dyer15ParserModel::new_graph(dynet::ComputationGraph & cg) {
   composer.new_graph(cg);
   scorer.new_graph(cg);
 
-  action_start = dynet::expr::parameter(cg, p_action_start);
-  buffer_guard = dynet::expr::parameter(cg, p_buffer_guard);
-  stack_guard = dynet::expr::parameter(cg, p_stack_guard);
+  action_start = dynet::parameter(cg, p_action_start);
+  buffer_guard = dynet::parameter(cg, p_buffer_guard);
+  stack_guard = dynet::parameter(cg, p_stack_guard);
 }
 
-std::vector<dynet::expr::Expression> Dyer15ParserModel::get_params() {
-  std::vector<dynet::expr::Expression> ret;
+std::vector<dynet::Expression> Dyer15ParserModel::get_params() {
+  std::vector<dynet::Expression> ret;
   for (auto & layer : s_lstm.param_vars) { for (auto & e : layer) { ret.push_back(e); } }
   for (auto & layer : q_lstm.param_vars) { for (auto & e : layer) { ret.push_back(e); } }
   for (auto & layer : a_lstm.param_vars) { for (auto & e : layer) { ret.push_back(e); } }
@@ -90,31 +90,31 @@ std::vector<dynet::expr::Expression> Dyer15ParserModel::get_params() {
 
 void Dyer15ParserState::ArcEagerPerformer::perform_action(const unsigned & action,
                                                           dynet::ComputationGraph & cg) {
-  dynet::expr::Expression act_expr = state->model.act_emb.embed(action);
+  dynet::Expression act_expr = state->model.act_emb.embed(action);
   unsigned _, deprel; state->model.system.split(action, _, deprel);
-  dynet::expr::Expression rel_expr = state->model.rel_emb.embed((deprel == UINT_MAX ? state->model.size_l: deprel));
-  dynet::LSTMBuilder & a_lstm = state->model.a_lstm;
-  dynet::LSTMBuilder & s_lstm = state->model.s_lstm;
-  dynet::LSTMBuilder & q_lstm = state->model.q_lstm;
+  dynet::Expression rel_expr = state->model.rel_emb.embed((deprel == UINT_MAX ? state->model.size_l: deprel));
+  dynet::CoupledLSTMBuilder & a_lstm = state->model.a_lstm;
+  dynet::CoupledLSTMBuilder & s_lstm = state->model.s_lstm;
+  dynet::CoupledLSTMBuilder & q_lstm = state->model.q_lstm;
   dynet::RNNPointer & a_pointer = state->a_pointer;
   dynet::RNNPointer & s_pointer = state->s_pointer;
   dynet::RNNPointer & q_pointer = state->q_pointer;
   Merge3Layer & composer = state->model.composer;
-  std::vector<dynet::expr::Expression> & stack = state->stack;
-  std::vector<dynet::expr::Expression> & buffer = state->buffer;
+  std::vector<dynet::Expression> & stack = state->stack;
+  std::vector<dynet::Expression> & buffer = state->buffer;
 
   a_lstm.add_input(a_pointer, act_expr);
   a_pointer = a_lstm.state();
 
   if (ArcEager::is_shift(action)) {
-    const dynet::expr::Expression & buffer_front = buffer.back();
+    const dynet::Expression & buffer_front = buffer.back();
     stack.push_back(buffer_front);
     s_lstm.add_input(s_pointer, buffer_front);
     s_pointer = s_lstm.state();
     buffer.pop_back();
     q_pointer = q_lstm.get_head(q_pointer);
   } else if (ArcEager::is_left(action)) {
-    dynet::expr::Expression mod_expr, hed_expr;
+    dynet::Expression mod_expr, hed_expr;
     hed_expr = buffer.back();
     mod_expr = stack.back();
 
@@ -122,17 +122,17 @@ void Dyer15ParserState::ArcEagerPerformer::perform_action(const unsigned & actio
     buffer.pop_back();
     s_pointer = s_lstm.get_head(s_pointer);
     q_pointer = q_lstm.get_head(q_pointer);
-    buffer.push_back(dynet::expr::tanh(composer.get_output(hed_expr, mod_expr, rel_expr)));
+    buffer.push_back(dynet::tanh(composer.get_output(hed_expr, mod_expr, rel_expr)));
     q_lstm.add_input(q_pointer, buffer.back());
     q_pointer = q_lstm.state();
   } else if (ArcEager::is_right(action)) {
-    dynet::expr::Expression mod_expr, hed_expr;
+    dynet::Expression mod_expr, hed_expr;
     mod_expr = buffer.back();
     hed_expr = stack.back();
 
     stack.pop_back();
     s_pointer = s_lstm.get_head(s_pointer);
-    stack.push_back(dynet::expr::tanh(composer.get_output(hed_expr, mod_expr, rel_expr)));
+    stack.push_back(dynet::tanh(composer.get_output(hed_expr, mod_expr, rel_expr)));
     s_lstm.add_input(s_pointer, stack.back());
     s_pointer = s_lstm.state();
     stack.push_back(mod_expr);
@@ -148,30 +148,30 @@ void Dyer15ParserState::ArcEagerPerformer::perform_action(const unsigned & actio
 
 void Dyer15ParserState::ArcStandardPerformer::perform_action(const unsigned & action,
                                                              dynet::ComputationGraph & cg) {
-  dynet::expr::Expression act_expr = state->model.act_emb.embed(action);
+  dynet::Expression act_expr = state->model.act_emb.embed(action);
   unsigned _, deprel; state->model.system.split(action, _, deprel);
-  dynet::expr::Expression rel_expr = state->model.rel_emb.embed((deprel == UINT_MAX ? state->model.size_l: deprel));
-  dynet::LSTMBuilder & a_lstm = state->model.a_lstm;
-  dynet::LSTMBuilder & s_lstm = state->model.s_lstm;
-  dynet::LSTMBuilder & q_lstm = state->model.q_lstm;
+  dynet::Expression rel_expr = state->model.rel_emb.embed((deprel == UINT_MAX ? state->model.size_l: deprel));
+  dynet::CoupledLSTMBuilder & a_lstm = state->model.a_lstm;
+  dynet::CoupledLSTMBuilder & s_lstm = state->model.s_lstm;
+  dynet::CoupledLSTMBuilder & q_lstm = state->model.q_lstm;
   dynet::RNNPointer & a_pointer = state->a_pointer;
   dynet::RNNPointer & s_pointer = state->s_pointer;
   dynet::RNNPointer & q_pointer = state->q_pointer;
   Merge3Layer & composer = state->model.composer;
-  std::vector<dynet::expr::Expression> & stack = state->stack;
-  std::vector<dynet::expr::Expression> & buffer = state->buffer;
+  std::vector<dynet::Expression> & stack = state->stack;
+  std::vector<dynet::Expression> & buffer = state->buffer;
 
   a_lstm.add_input(a_pointer, act_expr);
   a_pointer = a_lstm.state();
   if (ArcStandard::is_shift(action)) {
-    const dynet::expr::Expression& buffer_front = buffer.back();
+    const dynet::Expression& buffer_front = buffer.back();
     stack.push_back(buffer_front);
     s_lstm.add_input(s_pointer, buffer_front);
     s_pointer = s_lstm.state();
     buffer.pop_back();
     q_pointer = q_lstm.get_head(q_pointer);
   } else {
-    dynet::expr::Expression mod_expr, hed_expr;
+    dynet::Expression mod_expr, hed_expr;
     if (ArcStandard::is_left(action)) {
       hed_expr = stack.back();
       mod_expr = stack[stack.size() - 2];
@@ -183,7 +183,7 @@ void Dyer15ParserState::ArcStandardPerformer::perform_action(const unsigned & ac
     s_pointer = s_lstm.get_head(s_pointer);
     s_pointer = s_lstm.get_head(s_pointer);
 
-    stack.push_back(dynet::expr::tanh(composer.get_output(hed_expr, mod_expr, rel_expr)));
+    stack.push_back(dynet::tanh(composer.get_output(hed_expr, mod_expr, rel_expr)));
     s_lstm.add_input(s_pointer, stack.back());
     s_pointer = s_lstm.state();
   }
@@ -191,30 +191,30 @@ void Dyer15ParserState::ArcStandardPerformer::perform_action(const unsigned & ac
 
 void Dyer15ParserState::ArcHybridPerformer::perform_action(const unsigned & action,
                                                            dynet::ComputationGraph & cg) {
-  dynet::expr::Expression act_expr = state->model.act_emb.embed(action);
+  dynet::Expression act_expr = state->model.act_emb.embed(action);
   unsigned _, deprel; state->model.system.split(action, _, deprel);
-  dynet::expr::Expression rel_expr = state->model.rel_emb.embed((deprel == UINT_MAX ? state->model.size_l: deprel));
-  dynet::LSTMBuilder & a_lstm = state->model.a_lstm;
-  dynet::LSTMBuilder & s_lstm = state->model.s_lstm;
-  dynet::LSTMBuilder & q_lstm = state->model.q_lstm;
+  dynet::Expression rel_expr = state->model.rel_emb.embed((deprel == UINT_MAX ? state->model.size_l: deprel));
+  dynet::CoupledLSTMBuilder & a_lstm = state->model.a_lstm;
+  dynet::CoupledLSTMBuilder & s_lstm = state->model.s_lstm;
+  dynet::CoupledLSTMBuilder & q_lstm = state->model.q_lstm;
   dynet::RNNPointer & a_pointer = state->a_pointer;
   dynet::RNNPointer & s_pointer = state->s_pointer;
   dynet::RNNPointer & q_pointer = state->q_pointer;
   Merge3Layer & composer = state->model.composer;
-  std::vector<dynet::expr::Expression> & stack = state->stack;
-  std::vector<dynet::expr::Expression> & buffer = state->buffer;
+  std::vector<dynet::Expression> & stack = state->stack;
+  std::vector<dynet::Expression> & buffer = state->buffer;
 
   a_lstm.add_input(a_pointer, act_expr);
   a_pointer = a_lstm.state();
   if (ArcHybrid::is_shift(action)) {
-    const dynet::expr::Expression& buffer_front = buffer.back();
+    const dynet::Expression& buffer_front = buffer.back();
     stack.push_back(buffer_front);
     s_lstm.add_input(s_pointer, buffer_front);
     s_pointer = s_lstm.state();
     buffer.pop_back();
     q_pointer = q_lstm.get_head(q_pointer);
   } else if (ArcHybrid::is_left(action)) {
-    dynet::expr::Expression mod_expr, hed_expr;
+    dynet::Expression mod_expr, hed_expr;
     hed_expr = buffer.back();
     mod_expr = stack.back();
 
@@ -222,11 +222,11 @@ void Dyer15ParserState::ArcHybridPerformer::perform_action(const unsigned & acti
     buffer.pop_back();
     s_pointer = s_lstm.get_head(s_pointer);
     q_pointer = q_lstm.get_head(q_pointer);
-    buffer.push_back(dynet::expr::tanh(composer.get_output(hed_expr, mod_expr, rel_expr)));
+    buffer.push_back(dynet::tanh(composer.get_output(hed_expr, mod_expr, rel_expr)));
     q_lstm.add_input(q_pointer, buffer.back());
     q_pointer = q_lstm.state();
   } else {
-    dynet::expr::Expression mod_expr, hed_expr;
+    dynet::Expression mod_expr, hed_expr;
     hed_expr = stack[stack.size() - 2];
     mod_expr = stack.back();
 
@@ -234,7 +234,7 @@ void Dyer15ParserState::ArcHybridPerformer::perform_action(const unsigned & acti
     stack.pop_back();
     s_pointer = s_lstm.get_head(s_pointer);
     s_pointer = s_lstm.get_head(s_pointer);
-    stack.push_back(dynet::expr::tanh(composer.get_output(hed_expr, mod_expr, rel_expr)));
+    stack.push_back(dynet::tanh(composer.get_output(hed_expr, mod_expr, rel_expr)));
     s_lstm.add_input(s_pointer, stack.back());
     s_pointer = s_lstm.state();
   }
@@ -242,31 +242,31 @@ void Dyer15ParserState::ArcHybridPerformer::perform_action(const unsigned & acti
 
 void Dyer15ParserState::SwapPerformer::perform_action(const unsigned & action,
                                                       dynet::ComputationGraph & cg) {
-  dynet::expr::Expression act_expr = state->model.act_emb.embed(action);
+  dynet::Expression act_expr = state->model.act_emb.embed(action);
   unsigned _, deprel; state->model.system.split(action, _, deprel);
-  dynet::expr::Expression rel_expr = state->model.rel_emb.embed((deprel == UINT_MAX ? state->model.size_l: deprel));
-  dynet::LSTMBuilder & a_lstm = state->model.a_lstm;
-  dynet::LSTMBuilder & s_lstm = state->model.s_lstm;
-  dynet::LSTMBuilder & q_lstm = state->model.q_lstm;
+  dynet::Expression rel_expr = state->model.rel_emb.embed((deprel == UINT_MAX ? state->model.size_l: deprel));
+  dynet::CoupledLSTMBuilder & a_lstm = state->model.a_lstm;
+  dynet::CoupledLSTMBuilder & s_lstm = state->model.s_lstm;
+  dynet::CoupledLSTMBuilder & q_lstm = state->model.q_lstm;
   dynet::RNNPointer & a_pointer = state->a_pointer;
   dynet::RNNPointer & s_pointer = state->s_pointer;
   dynet::RNNPointer & q_pointer = state->q_pointer;
   Merge3Layer & composer = state->model.composer;
-  std::vector<dynet::expr::Expression> & stack = state->stack;
-  std::vector<dynet::expr::Expression> & buffer = state->buffer;
+  std::vector<dynet::Expression> & stack = state->stack;
+  std::vector<dynet::Expression> & buffer = state->buffer;
   
   a_lstm.add_input(a_pointer, act_expr);
   a_pointer = a_lstm.state();
   if (Swap::is_shift(action)) {
-    const dynet::expr::Expression& buffer_front = buffer.back();
+    const dynet::Expression& buffer_front = buffer.back();
     stack.push_back(buffer_front);
     s_lstm.add_input(s_pointer, buffer_front);
     s_pointer = s_lstm.state();
     buffer.pop_back();
     q_pointer = q_lstm.get_head(q_pointer);
   } else if (Swap::is_swap(action)) {
-    dynet::expr::Expression j_expr = stack.back();
-    dynet::expr::Expression i_expr = stack[stack.size() - 2];
+    dynet::Expression j_expr = stack.back();
+    dynet::Expression i_expr = stack[stack.size() - 2];
 
     stack.pop_back();
     stack.pop_back();
@@ -279,7 +279,7 @@ void Dyer15ParserState::SwapPerformer::perform_action(const unsigned & action,
     q_lstm.add_input(q_pointer, buffer.back());
     q_pointer = q_lstm.state();
   } else {
-    dynet::expr::Expression mod_expr, hed_expr;
+    dynet::Expression mod_expr, hed_expr;
     if (Swap::is_left(action)) {
       hed_expr = stack.back();
       mod_expr = stack[stack.size() - 2];
@@ -291,7 +291,7 @@ void Dyer15ParserState::SwapPerformer::perform_action(const unsigned & action,
     stack.pop_back();
     s_pointer = s_lstm.get_head(s_pointer);
     s_pointer = s_lstm.get_head(s_pointer);
-    stack.push_back(dynet::expr::tanh(composer.get_output(hed_expr, mod_expr, rel_expr)));
+    stack.push_back(dynet::tanh(composer.get_output(hed_expr, mod_expr, rel_expr)));
     s_lstm.add_input(s_pointer, stack.back());
     s_pointer = s_lstm.state();
   }
@@ -337,7 +337,7 @@ void Dyer15ParserState::initialize(dynet::ComputationGraph & cg,
     unsigned nid = input[i].nid;
     if (!model.pretrained.count(nid)) { nid = 0; }
 
-    buffer[len - i] = dynet::expr::rectify(model.merge_input.get_output(
+    buffer[len - i] = dynet::rectify(model.merge_input.get_output(
       model.word_emb.embed(wid),
       model.pos_emb.embed(pid),
       model.preword_emb.embed(nid)
@@ -372,15 +372,15 @@ ParserState * Dyer15ParserState::copy() {
   return new_parser_state;
 }
 
-dynet::expr::Expression Dyer15ParserState::get_scores() {
-  return model.scorer.get_output(dynet::expr::rectify(model.merge.get_output(
+dynet::Expression Dyer15ParserState::get_scores() {
+  return model.scorer.get_output(dynet::rectify(model.merge.get_output(
     model.s_lstm.get_h(s_pointer).back(),
     model.q_lstm.get_h(q_pointer).back(),
     model.a_lstm.get_h(a_pointer).back())
   ));
 }
 
-std::vector<dynet::expr::Expression> Dyer15ParserState::get_params() {
+std::vector<dynet::Expression> Dyer15ParserState::get_params() {
   return model.get_params();
 }
 

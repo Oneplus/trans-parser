@@ -110,13 +110,13 @@ float SupervisedEnsembleStaticTrainer::train_full_tree(const InputUnits & input_
   transition_state.initialize(input_units);
 
   unsigned n_actions = 0;
-  std::vector<dynet::expr::Expression> loss;
+  std::vector<dynet::Expression> loss;
   while (!transition_state.terminated()) {
     // collect all valid actions.
     std::vector<unsigned> valid_actions;
     system.get_valid_actions(transition_state, valid_actions);
 
-    dynet::expr::Expression score_exprs = parser_state->get_scores();
+    dynet::Expression score_exprs = parser_state->get_scores();
     std::vector<float> scores = dynet::as_vector(cg.get_value(score_exprs));
 
     add_loss_one_step(score_exprs, valid_actions, action_units.actions[n_actions].prob,
@@ -129,25 +129,25 @@ float SupervisedEnsembleStaticTrainer::train_full_tree(const InputUnits & input_
   }
   float ret = 0.;
   if (loss.size() > 0) {
-    std::vector<dynet::expr::Expression> all_params = parser_state->get_params();
-    std::vector<dynet::expr::Expression> reg;
-    for (auto e : all_params) { reg.push_back(dynet::expr::squared_norm(e)); }
-    dynet::expr::Expression l = dynet::expr::sum(loss) + 0.5 * loss.size() * lambda_ * dynet::expr::sum(reg);
+    std::vector<dynet::Expression> all_params = parser_state->get_params();
+    std::vector<dynet::Expression> reg;
+    for (auto e : all_params) { reg.push_back(dynet::squared_norm(e)); }
+    dynet::Expression l = dynet::sum(loss) + 0.5 * loss.size() * lambda_ * dynet::sum(reg);
     ret = dynet::as_scalar(cg.incremental_forward(l));
     cg.backward(l);
-    trainer->update(1.f);
+    trainer->update();
   }
   delete parser_state;
   return ret;
 }
 
-void SupervisedEnsembleStaticTrainer::add_loss_one_step(dynet::expr::Expression & score_expr,
+void SupervisedEnsembleStaticTrainer::add_loss_one_step(dynet::Expression & score_expr,
                                                         const std::vector<unsigned>& valid_actions,
                                                         const std::vector<float>& probs,
-                                                        std::vector<dynet::expr::Expression>& loss) {
+                                                        std::vector<dynet::Expression>& loss) {
   unsigned n_probs = probs.size();
   loss.push_back(-dynet::dot_product(
-    dynet::expr::input(*score_expr.pg, { n_probs }, probs),
-    dynet::expr::log_softmax(score_expr)
+    dynet::input(*score_expr.pg, { n_probs }, probs),
+    dynet::log_softmax(score_expr)
   ));
 }

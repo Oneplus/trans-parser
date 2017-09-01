@@ -33,7 +33,7 @@ Kiperwasser16ParserModel::Kiperwasser16ParserModel(dynet::Model & m,
   size_a(size_a),
   n_layers(n_layers), dim_lstm_in(dim_lstm_in), dim_hidden(dim_hidden) {
   for (auto it : pretrained) {
-    preword_emb.p_labels.initialize(it.first, it.second);
+    preword_emb.p_e.initialize(it.first, it.second);
   }
 }
 
@@ -47,13 +47,13 @@ void Kiperwasser16ParserModel::new_graph(dynet::ComputationGraph & cg) {
   merge.new_graph(cg);
   scorer.new_graph(cg);
 
-  fwd_guard = dynet::expr::parameter(cg, p_fwd_guard);
-  bwd_guard = dynet::expr::parameter(cg, p_bwd_guard);
-  empty = dynet::expr::parameter(cg, p_empty);
+  fwd_guard = dynet::parameter(cg, p_fwd_guard);
+  bwd_guard = dynet::parameter(cg, p_bwd_guard);
+  empty = dynet::parameter(cg, p_empty);
 }
 
-std::vector<dynet::expr::Expression> Kiperwasser16ParserModel::get_params() {
-  std::vector<dynet::expr::Expression> ret;
+std::vector<dynet::Expression> Kiperwasser16ParserModel::get_params() {
+  std::vector<dynet::Expression> ret;
   for (auto & layer : fwd_lstm.param_vars) { for (auto & e : layer) { ret.push_back(e); } }
   for (auto & layer : bwd_lstm.param_vars) { for (auto & e : layer) { ret.push_back(e); } }
   for (auto & e : merge_input.get_params()) { ret.push_back(e); }
@@ -66,12 +66,12 @@ std::vector<dynet::expr::Expression> Kiperwasser16ParserModel::get_params() {
 }
 
 void Kiperwasser16ParserState::ArcEagerExtractor::extract(const TransitionState & state) {
-  dynet::expr::Expression & empty = hook->model.empty;
-  dynet::expr::Expression & f0 = hook->f0;
-  dynet::expr::Expression & f1 = hook->f1;
-  dynet::expr::Expression & f2 = hook->f2;
-  dynet::expr::Expression & f3 = hook->f3;
-  std::vector<dynet::expr::Expression> & encoded = hook->encoded;
+  dynet::Expression & empty = hook->model.empty;
+  dynet::Expression & f0 = hook->f0;
+  dynet::Expression & f1 = hook->f1;
+  dynet::Expression & f2 = hook->f2;
+  dynet::Expression & f3 = hook->f3;
+  std::vector<dynet::Expression> & encoded = hook->encoded;
 
   unsigned stack_size = state.stack.size();
   f0 = (stack_size > 2 ? encoded[state.stack[stack_size - 2]] : empty);
@@ -83,12 +83,12 @@ void Kiperwasser16ParserState::ArcEagerExtractor::extract(const TransitionState 
 }
 
 void Kiperwasser16ParserState::ArcStandardExtractor::extract(const TransitionState & state) {
-  dynet::expr::Expression & empty = hook->model.empty;
-  dynet::expr::Expression & f0 = hook->f0;
-  dynet::expr::Expression & f1 = hook->f1;
-  dynet::expr::Expression & f2 = hook->f2;
-  dynet::expr::Expression & f3 = hook->f3;
-  std::vector<dynet::expr::Expression> & encoded = hook->encoded;
+  dynet::Expression & empty = hook->model.empty;
+  dynet::Expression & f0 = hook->f0;
+  dynet::Expression & f1 = hook->f1;
+  dynet::Expression & f2 = hook->f2;
+  dynet::Expression & f3 = hook->f3;
+  std::vector<dynet::Expression> & encoded = hook->encoded;
   
   unsigned stack_size = state.stack.size();
   f0 = (stack_size > 3 ? encoded[state.stack[stack_size - 3]] : empty);
@@ -100,12 +100,12 @@ void Kiperwasser16ParserState::ArcStandardExtractor::extract(const TransitionSta
 }
 
 void Kiperwasser16ParserState::ArcHybridExtractor::extract(const TransitionState & state) {
-  dynet::expr::Expression & empty = hook->model.empty;
-  dynet::expr::Expression & f0 = hook->f0;
-  dynet::expr::Expression & f1 = hook->f1;
-  dynet::expr::Expression & f2 = hook->f2;
-  dynet::expr::Expression & f3 = hook->f3;
-  std::vector<dynet::expr::Expression> & encoded = hook->encoded;
+  dynet::Expression & empty = hook->model.empty;
+  dynet::Expression & f0 = hook->f0;
+  dynet::Expression & f1 = hook->f1;
+  dynet::Expression & f2 = hook->f2;
+  dynet::Expression & f3 = hook->f3;
+  std::vector<dynet::Expression> & encoded = hook->encoded;
 
   unsigned stack_size = state.stack.size();
   f0 = (stack_size > 3 ? encoded[state.stack[stack_size - 3]] : empty);
@@ -117,12 +117,12 @@ void Kiperwasser16ParserState::ArcHybridExtractor::extract(const TransitionState
 }
 
 void Kiperwasser16ParserState::SwapExtractor::extract(const TransitionState & state) {
-  dynet::expr::Expression & empty = hook->model.empty;
-  dynet::expr::Expression & f0 = hook->f0;
-  dynet::expr::Expression & f1 = hook->f1;
-  dynet::expr::Expression & f2 = hook->f2;
-  dynet::expr::Expression & f3 = hook->f3;
-  std::vector<dynet::expr::Expression> & encoded = hook->encoded;
+  dynet::Expression & empty = hook->model.empty;
+  dynet::Expression & f0 = hook->f0;
+  dynet::Expression & f1 = hook->f1;
+  dynet::Expression & f2 = hook->f2;
+  dynet::Expression & f3 = hook->f3;
+  std::vector<dynet::Expression> & encoded = hook->encoded;
   
   unsigned stack_size = state.stack.size();
   f0 = (stack_size > 3 ? encoded[state.stack[stack_size - 3]] : empty);
@@ -159,14 +159,14 @@ void Kiperwasser16ParserState::initialize(dynet::ComputationGraph & cg,
   model.bwd_lstm.start_new_sequence();
 
   unsigned len = input.size();
-  std::vector<dynet::expr::Expression> lstm_input(len);
+  std::vector<dynet::Expression> lstm_input(len);
   for (unsigned i = 0; i < len; ++i) {
     unsigned wid = input[i].wid;
     unsigned pid = input[i].pid;
     unsigned aux_wid = input[i].aux_wid;
     if (!model.pretrained.count(aux_wid)) { aux_wid = 0; }
 
-    lstm_input[i] = dynet::expr::rectify(model.merge_input.get_output(
+    lstm_input[i] = dynet::rectify(model.merge_input.get_output(
       model.word_emb.embed(wid),
       model.pos_emb.embed(pid), 
       model.preword_emb.embed(aux_wid))
@@ -175,8 +175,8 @@ void Kiperwasser16ParserState::initialize(dynet::ComputationGraph & cg,
 
   model.fwd_lstm.add_input(model.fwd_guard);
   model.bwd_lstm.add_input(model.bwd_guard);
-  std::vector<dynet::expr::Expression> fwd_lstm_output(len);
-  std::vector<dynet::expr::Expression> bwd_lstm_output(len);
+  std::vector<dynet::Expression> fwd_lstm_output(len);
+  std::vector<dynet::Expression> bwd_lstm_output(len);
   for (unsigned i = 0; i < len; ++i) {
     model.fwd_lstm.add_input(lstm_input[i]);
     model.bwd_lstm.add_input(lstm_input[len - 1 - i]);
@@ -185,7 +185,7 @@ void Kiperwasser16ParserState::initialize(dynet::ComputationGraph & cg,
   }
   encoded.resize(len);
   for (unsigned i = 0; i < len; ++i) {
-    encoded[i] = dynet::expr::concatenate({ fwd_lstm_output[i], bwd_lstm_output[i] });
+    encoded[i] = dynet::concatenate({ fwd_lstm_output[i], bwd_lstm_output[i] });
   }
 
   TransitionState state(len);
@@ -209,12 +209,12 @@ ParserState * Kiperwasser16ParserState::copy() {
   return new_parser_state;
 }
 
-dynet::expr::Expression Kiperwasser16ParserState::get_scores() {
+dynet::Expression Kiperwasser16ParserState::get_scores() {
   return model.scorer.get_output(
-    dynet::expr::tanh(model.merge.get_output(f0, f1, f2, f3)));
+    dynet::tanh(model.merge.get_output(f0, f1, f2, f3)));
 }
 
-std::vector<dynet::expr::Expression> Kiperwasser16ParserState::get_params() {
+std::vector<dynet::Expression> Kiperwasser16ParserState::get_params() {
   return model.get_params();
 }
 

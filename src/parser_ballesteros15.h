@@ -2,10 +2,11 @@
 #define PARSER_BALLESTEROS15_H
 
 #include "parser.h"
-#include "layer.h"
 #include "corpus.h"
 #include "state.h"
 #include "system.h"
+#include "dynet/lstm.h"
+#include "dynet_layer/layer.h"
 #include <vector>
 #include <unordered_map>
 #include <boost/program_options.hpp>
@@ -13,11 +14,11 @@
 namespace po = boost::program_options;
 
 struct Ballesteros15ParserModel : public ParserModel {
-  dynet::LSTMBuilder fwd_ch_lstm;
-  dynet::LSTMBuilder bwd_ch_lstm;
-  dynet::LSTMBuilder s_lstm;
-  dynet::LSTMBuilder q_lstm;
-  dynet::LSTMBuilder a_lstm;
+  dynet::CoupledLSTMBuilder fwd_ch_lstm;
+  dynet::CoupledLSTMBuilder bwd_ch_lstm;
+  dynet::CoupledLSTMBuilder s_lstm;
+  dynet::CoupledLSTMBuilder q_lstm;
+  dynet::CoupledLSTMBuilder a_lstm;
 
   SymbolEmbedding char_emb;
   SymbolEmbedding pos_emb;
@@ -36,12 +37,12 @@ struct Ballesteros15ParserModel : public ParserModel {
   dynet::Parameter p_word_start_guard;
   dynet::Parameter p_word_end_guard;
   dynet::Parameter p_root_word;
-  dynet::expr::Expression action_start;
-  dynet::expr::Expression buffer_guard;
-  dynet::expr::Expression stack_guard;
-  dynet::expr::Expression word_start_guard;
-  dynet::expr::Expression word_end_guard;
-  dynet::expr::Expression root_word;
+  dynet::Expression action_start;
+  dynet::Expression buffer_guard;
+  dynet::Expression stack_guard;
+  dynet::Expression word_start_guard;
+  dynet::Expression word_end_guard;
+  dynet::Expression root_word;
   
   /// The reference
   const Embeddings & pretrained;
@@ -70,7 +71,7 @@ struct Ballesteros15ParserModel : public ParserModel {
 
   void new_graph(dynet::ComputationGraph & cg) override;
 
-  std::vector<dynet::expr::Expression> get_params() override;
+  std::vector<dynet::Expression> get_params() override;
 };
 
 struct Ballesteros15ParserState : public ParserState {
@@ -80,8 +81,8 @@ struct Ballesteros15ParserState : public ParserState {
   dynet::RNNPointer s_pointer;
   dynet::RNNPointer q_pointer;
   dynet::RNNPointer a_pointer;
-  std::vector<dynet::expr::Expression> stack;
-  std::vector<dynet::expr::Expression> buffer;
+  std::vector<dynet::Expression> stack;
+  std::vector<dynet::Expression> buffer;
   ActionPerformer * performer;
 
   struct ActionPerformer {
@@ -135,9 +136,9 @@ struct Ballesteros15ParserState : public ParserState {
   ParserState * copy() override;
 
   /// Get the un-softmaxed scores from the LSTM-parser.
-  dynet::expr::Expression get_scores() override;
+  dynet::Expression get_scores() override;
 
-  std::vector<dynet::expr::Expression> get_params() override;
+  std::vector<dynet::Expression> get_params() override;
 };
 
 struct Ballesteros15ParserStateBuilder : public ParserStateBuilder {

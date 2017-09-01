@@ -31,10 +31,10 @@ struct SupervisedEnsembleStaticTrainer {
                         const ActionUnits & action_units,
                         dynet::Trainer* trainer);
 
-  void add_loss_one_step(dynet::expr::Expression & score_expr,
+  void add_loss_one_step(dynet::Expression & score_expr,
                          const std::vector<unsigned> & valid_actions,
                          const std::vector<float> & probs,
-                         std::vector<dynet::expr::Expression> & loss);
+                         std::vector<dynet::Expression> & loss);
 };
 
 #endif  //  end for TRAIN_SUPERVISED_ENSEMBLE_STATIC_H

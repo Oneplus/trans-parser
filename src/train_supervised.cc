@@ -144,28 +144,28 @@ void SupervisedTrainer::train(const po::variables_map& conf,
   delete trainer;
 }
 
-void SupervisedTrainer::add_loss_one_step(dynet::expr::Expression & score_expr,
+void SupervisedTrainer::add_loss_one_step(dynet::Expression & score_expr,
                                           const unsigned & best_gold_action,
                                           const unsigned & worst_gold_action,
                                           const unsigned & best_non_gold_action,
-                                          std::vector<dynet::expr::Expression> & loss) {
+                                          std::vector<dynet::Expression> & loss) {
   TransitionSystem & system = state_builder.system;
   unsigned illegal_action = system.num_actions();
 
   if (objective_type == kCrossEntropy || objective_type == kStructure /* in pretrain model. */) {
-    loss.push_back(dynet::expr::pickneglogsoftmax(score_expr, best_gold_action));
+    loss.push_back(dynet::pickneglogsoftmax(score_expr, best_gold_action));
   } else if (objective_type == kRank) {
     if (best_gold_action != illegal_action && best_non_gold_action != illegal_action) {
-      loss.push_back(dynet::expr::pairwise_rank_loss(
-        dynet::expr::pick(score_expr, best_gold_action),
-        dynet::expr::pick(score_expr, best_non_gold_action)
+      loss.push_back(dynet::pairwise_rank_loss(
+        dynet::pick(score_expr, best_gold_action),
+        dynet::pick(score_expr, best_non_gold_action)
       ));
     }
   } else {
     if (worst_gold_action != illegal_action && best_non_gold_action != illegal_action) {
-      loss.push_back(dynet::expr::pairwise_rank_loss(
-        dynet::expr::pick(score_expr, worst_gold_action),
-        dynet::expr::pick(score_expr, best_non_gold_action)
+      loss.push_back(dynet::pairwise_rank_loss(
+        dynet::pick(score_expr, worst_gold_action),
+        dynet::pick(score_expr, best_non_gold_action)
       ));
     }
   }
@@ -194,13 +194,13 @@ float SupervisedTrainer::train_full_tree(const InputUnits& input_units,
   unsigned illegal_action = system.num_actions();
   unsigned n_actions = 0;
 
-  std::vector<dynet::expr::Expression> loss;
+  std::vector<dynet::Expression> loss;
   while (!transition_state.terminated()) {
     // collect all valid actions.
     std::vector<unsigned> valid_actions;
     system.get_valid_actions(transition_state, valid_actions);
 
-    dynet::expr::Expression score_exprs = parser_state->get_scores();
+    dynet::Expression score_exprs = parser_state->get_scores();
     std::vector<float> scores = dynet::as_vector(cg.get_value(score_exprs));
 
     unsigned action = 0;
@@ -255,13 +255,13 @@ float SupervisedTrainer::train_full_tree(const InputUnits& input_units,
   }
   float ret = 0.;
   if (loss.size() > 0) {
-    std::vector<dynet::expr::Expression> all_params = parser_state->get_params();
-    std::vector<dynet::expr::Expression> reg;
-    for (auto e : all_params) { reg.push_back(dynet::expr::squared_norm(e)); }
-    dynet::expr::Expression l = dynet::expr::sum(loss) + 0.5 * loss.size() * lambda_ * dynet::expr::sum(reg);
+    std::vector<dynet::Expression> all_params = parser_state->get_params();
+    std::vector<dynet::Expression> reg;
+    for (auto e : all_params) { reg.push_back(dynet::squared_norm(e)); }
+    dynet::Expression l = dynet::sum(loss) + 0.5 * loss.size() * lambda_ * dynet::sum(reg);
     ret = dynet::as_scalar(cg.incremental_forward(l));
     cg.backward(l);
-    trainer->update(1.f);
+    trainer->update();
   }
   delete parser_state;
   return ret;
@@ -272,7 +272,7 @@ float SupervisedTrainer::train_structure_full_tree(const InputUnits & input_unit
                                                    dynet::Trainer * trainer,
                                                    unsigned beam_size,
                                                    unsigned iter) {
-  typedef std::tuple<unsigned, unsigned, float, dynet::expr::Expression> Transition;
+  typedef std::tuple<unsigned, unsigned, float, dynet::Expression> Transition;
   TransitionSystem & system = state_builder.system;
 
   std::vector<unsigned> ref_heads, ref_deprels, gold_actions;
@@ -282,7 +282,7 @@ float SupervisedTrainer::train_structure_full_tree(const InputUnits & input_unit
   unsigned len = input_units.size();
   std::vector<TransitionState> transition_states;
   std::vector<float> scores;
-  std::vector<Expression> scores_exprs;
+  std::vector<dynet::Expression> scores_exprs;
   std::vector<ParserState *> parser_states;
 
   dynet::ComputationGraph cg;
@@ -295,7 +295,7 @@ float SupervisedTrainer::train_structure_full_tree(const InputUnits & input_unit
   parser_states[0]->initialize(cg, input_units);
 
   scores.push_back(0.);
-  scores_exprs.push_back(dynet::expr::zeroes(cg, { 1 }));
+  scores_exprs.push_back(dynet::zeroes(cg, { 1 }));
 
   unsigned curr = 0, next = 1, corr = 0;
   unsigned n_step = 0;
@@ -307,7 +307,7 @@ float SupervisedTrainer::train_structure_full_tree(const InputUnits & input_unit
     for (unsigned i = curr; i < next; ++i) {
       const TransitionState & prev_state = transition_states[i];
       float prev_score = scores[i];
-      dynet::expr::Expression prev_score_expr = scores_exprs[i];
+      dynet::Expression prev_score_expr = scores_exprs[i];
 
       if (prev_state.terminated()) {
         transitions.push_back(std::make_tuple(i, system.num_actions(), prev_score, prev_score_expr));
@@ -316,12 +316,12 @@ float SupervisedTrainer::train_structure_full_tree(const InputUnits & input_unit
         std::vector<unsigned> valid_actions;
         system.get_valid_actions(prev_state, valid_actions);
 
-        dynet::expr::Expression transit_scores_expr = parser_state->get_scores();
+        dynet::Expression transit_scores_expr = parser_state->get_scores();
         std::vector<float> transit_scores = dynet::as_vector(cg.get_value(transit_scores_expr));
         for (unsigned a : valid_actions) {
           transitions.push_back(std::make_tuple(
             i, a, prev_score + transit_scores[a],
-            prev_score_expr + dynet::expr::pick(transit_scores_expr, a)
+            prev_score_expr + dynet::pick(transit_scores_expr, a)
           ));
         }
       }
@@ -335,7 +335,7 @@ float SupervisedTrainer::train_structure_full_tree(const InputUnits & input_unit
       unsigned cursor = std::get<0>(transitions[i]);
       unsigned action = std::get<1>(transitions[i]);
       float new_score = std::get<2>(transitions[i]);
-      dynet::expr::Expression new_score_expr = std::get<3>(transitions[i]);
+      dynet::Expression new_score_expr = std::get<3>(transitions[i]);
       TransitionState & transition_state = transition_states[cursor];
       TransitionState new_transition_state(transition_state);
       ParserState * parser_state = parser_states[cursor];
@@ -363,7 +363,7 @@ float SupervisedTrainer::train_structure_full_tree(const InputUnits & input_unit
         unsigned action = std::get<1>(transitions[i]);
         float new_score = std::get<2>(transitions[i]);
         if (cursor == corr && action == gold_action) {
-          dynet::expr::Expression new_score_expr = std::get<3>(transitions[i]);
+          dynet::Expression new_score_expr = std::get<3>(transitions[i]);
           TransitionState & transition_state = transition_states[cursor];
           TransitionState new_transition_state(transition_state);
           ParserState * parser_state = parser_states[cursor];
@@ -391,18 +391,18 @@ float SupervisedTrainer::train_structure_full_tree(const InputUnits & input_unit
     if (early_update) { break; }
   }
 
-  std::vector<dynet::expr::Expression> loss;
+  std::vector<dynet::Expression> loss;
   for (unsigned i = curr; i < next; ++i) {
     loss.push_back(scores_exprs[i]);
   }
-  std::vector<dynet::expr::Expression> all_params = parser_states[0]->get_params();
-  std::vector<dynet::expr::Expression> reg;
-  for (auto e : all_params) { reg.push_back(dynet::expr::squared_norm(e)); }
-  dynet::expr::Expression l =
-    dynet::expr::pickneglogsoftmax(dynet::expr::concatenate(loss), corr - curr) + 0.5 * lambda_ * dynet::expr::sum(reg);
+  std::vector<dynet::Expression> all_params = parser_states[0]->get_params();
+  std::vector<dynet::Expression> reg;
+  for (auto e : all_params) { reg.push_back(dynet::squared_norm(e)); }
+  dynet::Expression l =
+    dynet::pickneglogsoftmax(dynet::concatenate(loss), corr - curr) + 0.5 * lambda_ * dynet::sum(reg);
   float ret = dynet::as_scalar(cg.incremental_forward(l));
   cg.backward(l);
-  trainer->update(1.f);
+  trainer->update();
 
   for (ParserState * parser_state : parser_states) { delete parser_state; }
   return ret;
@@ -429,13 +429,13 @@ float SupervisedTrainer::train_partial_tree(const InputUnits& input_units,
   unsigned illegal_action = system.num_actions();
   unsigned n_actions = 0;
 
-  std::vector<dynet::expr::Expression> loss;
+  std::vector<dynet::Expression> loss;
   while (!transition_state.terminated()) {
     // collect all valid actions.
     std::vector<unsigned> valid_actions;
     system.get_valid_actions(transition_state, valid_actions);
 
-    dynet::expr::Expression score_exprs = parser_state->get_scores();
+    dynet::Expression score_exprs = parser_state->get_scores();
     std::vector<float> scores = dynet::as_vector(cg.get_value(score_exprs));
 
     unsigned action = 0;
@@ -475,13 +475,13 @@ float SupervisedTrainer::train_partial_tree(const InputUnits& input_units,
 
   float ret = 0.f;
   if (loss.size() > 0) {
-    std::vector<dynet::expr::Expression> all_params = parser_state->get_params();
-    std::vector<dynet::expr::Expression> reg;
-    for (auto e : all_params) { reg.push_back(dynet::expr::squared_norm(e)); }
-    dynet::expr::Expression l = dynet::expr::sum(loss) + 0.5 * loss.size() * lambda_ * dynet::expr::sum(reg);
+    std::vector<dynet::Expression> all_params = parser_state->get_params();
+    std::vector<dynet::Expression> reg;
+    for (auto e : all_params) { reg.push_back(dynet::squared_norm(e)); }
+    dynet::Expression l = dynet::sum(loss) + 0.5 * loss.size() * lambda_ * dynet::sum(reg);
     ret = dynet::as_scalar(cg.incremental_forward(l));
     cg.backward(l);
-    trainer->update(1.f);
+    trainer->update();
   }
   delete parser_state;
   return ret;

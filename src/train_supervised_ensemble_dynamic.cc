@@ -136,19 +136,19 @@ void SupervisedEnsembleDynamicTrainer::train(const po::variables_map& conf,
   delete trainer;
 }
 
-void SupervisedEnsembleDynamicTrainer::add_loss_one_step(dynet::expr::Expression & score_expr,
-                                                  const std::vector<unsigned> & valid_actions,
-                                                  const std::vector<float> & probs,
-                                                  std::vector<dynet::expr::Expression> & loss) {
+void SupervisedEnsembleDynamicTrainer::add_loss_one_step(dynet::Expression & score_expr,
+                                                         const std::vector<unsigned> & valid_actions,
+                                                         const std::vector<float> & probs,
+                                                         std::vector<dynet::Expression> & loss) {
   TransitionSystem & system = state_builder.system;
   if (objective_type == kSparseCrossEntropy) {
     auto best = ParserState::get_best_action(probs, valid_actions);
-    loss.push_back(dynet::expr::pickneglogsoftmax(score_expr, best.first));
+    loss.push_back(dynet::pickneglogsoftmax(score_expr, best.first));
   } else {
     unsigned n_probs = probs.size();
     loss.push_back(-dynet::dot_product(
-      dynet::expr::input(*score_expr.pg, { n_probs }, probs),
-      dynet::expr::log_softmax(score_expr)
+      dynet::input(*score_expr.pg, { n_probs }, probs),
+      dynet::log_softmax(score_expr)
     ));
   }
 }
@@ -183,18 +183,18 @@ float SupervisedEnsembleDynamicTrainer::train_full_tree(const InputUnits& input_
   transition_state.initialize(input_units);
 
   unsigned n_actions = 0;
-  std::vector<dynet::expr::Expression> loss;
+  std::vector<dynet::Expression> loss;
   while (!transition_state.terminated()) {
     // collect all valid actions.
     std::vector<unsigned> valid_actions;
     system.get_valid_actions(transition_state, valid_actions);
 
-    dynet::expr::Expression score_exprs = parser_state->get_scores();
+    dynet::Expression score_exprs = parser_state->get_scores();
     std::vector<float> scores = dynet::as_vector(cg.get_value(score_exprs));
 
     std::vector<float> ensembled_scores(scores.size(), 0.f);
     for (ParserState* ensembled_parser_state : ensembled_parser_states) {
-      dynet::expr::Expression ensembled_score_exprs = ensembled_parser_state->get_scores();
+      dynet::Expression ensembled_score_exprs = ensembled_parser_state->get_scores();
       std::vector<float> ensembled_score = dynet::as_vector(cg.get_value(ensembled_score_exprs));
       if (ensemble_method == kProbability) { softmax_inplace(ensembled_score); }
       for (unsigned i = 0; i < ensembled_score.size(); ++i) {
@@ -232,13 +232,13 @@ float SupervisedEnsembleDynamicTrainer::train_full_tree(const InputUnits& input_
   }
   float ret = 0.;
   if (loss.size() > 0) {
-    std::vector<dynet::expr::Expression> all_params = parser_state->get_params();
-    std::vector<dynet::expr::Expression> reg;
-    for (auto e : all_params) { reg.push_back(dynet::expr::squared_norm(e)); }
-    dynet::expr::Expression l = dynet::expr::sum(loss) + 0.5 * loss.size() * lambda_ * dynet::expr::sum(reg);
+    std::vector<dynet::Expression> all_params = parser_state->get_params();
+    std::vector<dynet::Expression> reg;
+    for (auto e : all_params) { reg.push_back(dynet::squared_norm(e)); }
+    dynet::Expression l = dynet::sum(loss) + 0.5 * loss.size() * lambda_ * dynet::sum(reg);
     ret = dynet::as_scalar(cg.incremental_forward(l));
     cg.backward(l);
-    trainer->update(1.f);
+    trainer->update();
   }
   delete parser_state;
   for (ParserState * parser_state : ensembled_parser_states) { delete parser_state; }

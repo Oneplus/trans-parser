@@ -51,11 +51,11 @@ struct SupervisedTrainer {
                            dynet::Trainer* trainer,
                            unsigned iter);
 
-  void add_loss_one_step(dynet::expr::Expression & score_expr,
+  void add_loss_one_step(dynet::Expression & score_expr,
                          const unsigned & best_gold_action,
                          const unsigned & worst_gold_action,
                          const unsigned & best_non_gold_action,
-                         std::vector<dynet::expr::Expression> & loss);
+                         std::vector<dynet::Expression> & loss);
 };
 
 #endif  //  end for TRAIN_SUPERVISED_H

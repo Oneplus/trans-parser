@@ -34,7 +34,7 @@ float evaluate(const po::variables_map & conf,
       std::vector<unsigned> valid_actions;
       system.get_valid_actions(transition_state, valid_actions);
 
-      dynet::expr::Expression score_exprs = parser_state->get_scores();
+      dynet::Expression score_exprs = parser_state->get_scores();
       std::vector<float> scores = dynet::as_vector(cg.get_value(score_exprs));
     
       auto payload = ParserState::get_best_action(scores, valid_actions);
@@ -108,7 +108,7 @@ float evaluate(const po::variables_map & conf,
 
       std::vector<float> scores;
       for (ParserState* parser_state : parser_states) {
-        dynet::expr::Expression score_exprs = parser_state->get_scores();
+        dynet::Expression score_exprs = parser_state->get_scores();
         std::vector<float> score = dynet::as_vector(cg.get_value(score_exprs));
         if (scores.size() == 0) {
           scores = score;
@@ -204,8 +204,8 @@ float beam_search(const po::variables_map & conf,
         std::vector<unsigned> valid_actions;
         system.get_valid_actions(transition_state, valid_actions);
       
-        dynet::expr::Expression score_exprs = parser_state->get_scores();
-        if (!structure) { score_exprs = dynet::expr::log_softmax(score_exprs); }
+        dynet::Expression score_exprs = parser_state->get_scores();
+        if (!structure) { score_exprs = dynet::log_softmax(score_exprs); }
         std::vector<float> s = dynet::as_vector(cg.get_value(score_exprs));
         for (unsigned a : valid_actions) {
           transitions.push_back(std::make_tuple(i, a, score + s[a]));
