@@ -144,8 +144,8 @@ int main(int argc, char** argv) {
     trainer.train(conf, corpus, model_name, output, allow_non_projective, allow_partial_tree);
   }
 
-  for (auto p : model.parameters_list()) delete p;
-  for (auto p : model.lookup_parameters_list()) delete p;
+  // for (auto p : model.parameters_list()) delete p;
+  // for (auto p : model.lookup_parameters_list()) delete p;
   dynet::load_dynet_model(model_name, (&model));
 
   if (conf.count("beam_size") && conf["beam_size"].as<unsigned>() > 1) {
