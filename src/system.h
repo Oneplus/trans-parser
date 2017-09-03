@@ -2,7 +2,6 @@
 #define ABSTRACT_SYSTEM_H
 
 #include <vector>
-#include "state.h"
 #include "corpus.h"
 
 struct TransitionState {

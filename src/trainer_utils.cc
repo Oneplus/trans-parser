@@ -36,7 +36,7 @@ po::options_description get_optimizer_options() {
   cmd.add_options()
     ("optimizer", po::value<std::string>()->default_value("simple_sgd"), "The choice of optimizer [simple_sgd, momentum_sgd, adagrad, adadelta, adam].")
     ("optimizer_eta", po::value<float>(), "The initial value of learning rate (eta).")
-    ("optimizer_final_eta", po::value<float>()->default_value(0.), "The final value of eta.")
+    ("optimizer_final_eta", po::value<float>()->default_value(0.f), "The final value of eta.")
     ("optimizer_enable_eta_decay", po::value<bool>()->required(), "Specify to update eta at the end of each epoch.")
     ("optimizer_eta_decay", po::value<float>(), "The decay rate of eta.")
     ("optimizer_enable_clipping", po::value<bool>()->required(), "Enable clipping.")
@@ -47,14 +47,14 @@ po::options_description get_optimizer_options() {
   return cmd;
 }
 
-dynet::Trainer* get_trainer(const po::variables_map& conf, dynet::Model& model) {
+dynet::Trainer* get_trainer(const po::variables_map& conf, dynet::ParameterCollection & model) {
   dynet::Trainer* trainer = nullptr;
   if (!conf.count("optimizer") || conf["optimizer"].as<std::string>() == "simple_sgd") {
-    float eta0 = (conf.count("optimizer_eta") ? conf["optimizer_eta"].as<float>() : 0.1);
+    float eta0 = (conf.count("optimizer_eta") ? conf["optimizer_eta"].as<float>() : 0.1f);
     trainer = new dynet::SimpleSGDTrainer(model, eta0);
     // trainer->eta_decay = 0.08f;
   } else if (conf["optimizer"].as<std::string>() == "momentum_sgd") {
-    float eta0 = (conf.count("optimizer_eta") ? conf["optimizer_eta"].as<float>() : 0.1);
+    float eta0 = (conf.count("optimizer_eta") ? conf["optimizer_eta"].as<float>() : 0.1f);
     trainer = new dynet::MomentumSGDTrainer(model, eta0);
     // trainer->eta_decay = 0.08f;
   } else if (conf["optimizer"].as<std::string>() == "adagrad") {
@@ -87,10 +87,9 @@ dynet::Trainer* get_trainer(const po::variables_map& conf, dynet::Model& model) 
   if (conf["optimizer_enable_eta_decay"].as<bool>()) {
     _INFO << "Trainer:: eta decay = enabled";
     if (conf.count("optimizer_eta_decay")) {
-      // trainer->eta_decay = conf["optimizer_eta_decay"].as<float>();
-      // _INFO << "Trainer:: eta decay rate = " << trainer->eta_decay;
+      _INFO << "Trainer:: eta decay rate = " << conf["optimizer_eta_decay"].as<float>();
     } else {
-      // _INFO << "Trainer:: eta decay rate not set, use default = " << trainer->eta_decay;
+      _INFO << "Trainer:: eta decay rate not set, use default = " << 0.08f;
     }
   } else {
     _INFO << "Trainer:: eta decay = disabled";
@@ -98,12 +97,15 @@ dynet::Trainer* get_trainer(const po::variables_map& conf, dynet::Model& model) 
   return trainer;
 }
 
-void update_trainer(const po::variables_map& conf, dynet::Trainer* trainer) {
+void update_trainer(const po::variables_map& conf,
+                    const float & eta0,
+                    const float & iter,
+                    dynet::Trainer* trainer) {
   if (conf.count("optimizer_enable_eta_decay")) {
     float final_eta = conf["optimizer_final_eta"].as<float>();
+    float eta_decay = (conf.count("optimizer_eta_decay") ? conf["optimizer_eta_decay"].as<float>() : 0.08f);
     if (trainer->learning_rate > final_eta) {
-      trainer->update_epoch();
-      trainer->status();
+      trainer->learning_rate = eta0 / (1.f + iter * eta_decay);
       _INFO << "Trainer:: trainer updated.";
     } else {
       trainer->learning_rate = final_eta;

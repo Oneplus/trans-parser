@@ -1,7 +1,7 @@
 #include "parser_kiperwasser16.h"
 #include "logging.h"
 
-Kiperwasser16ParserModel::Kiperwasser16ParserModel(dynet::Model & m,
+Kiperwasser16ParserModel::Kiperwasser16ParserModel(dynet::ParameterCollection & m,
                                                    unsigned size_w,
                                                    unsigned dim_w,
                                                    unsigned size_p,
@@ -219,7 +219,7 @@ std::vector<dynet::Expression> Kiperwasser16ParserState::get_params() {
 }
 
 Kiperwasser16ParserStateBuilder::Kiperwasser16ParserStateBuilder(const po::variables_map & conf,
-                                                                 dynet::Model & model,
+                                                                 dynet::ParameterCollection & model,
                                                                  TransitionSystem & system,
                                                                  const Corpus & corpus,
                                                                  const Embeddings & pretrained) :

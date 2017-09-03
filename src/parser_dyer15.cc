@@ -9,7 +9,7 @@
 #include <vector>
 #include <random>
 
-Dyer15ParserModel::Dyer15ParserModel(dynet::Model& m,
+Dyer15ParserModel::Dyer15ParserModel(dynet::ParameterCollection & m,
                                      unsigned size_w,  //
                                      unsigned dim_w,   // word size, word dim
                                      unsigned size_p,  //
@@ -385,7 +385,7 @@ std::vector<dynet::Expression> Dyer15ParserState::get_params() {
 }
 
 Dyer15ParserStateBuilder::Dyer15ParserStateBuilder(const po::variables_map & conf,
-                                                   dynet::Model & model,
+                                                   dynet::ParameterCollection & model,
                                                    TransitionSystem & system,
                                                    const Corpus & corpus,
                                                    const Embeddings & pretrained) :

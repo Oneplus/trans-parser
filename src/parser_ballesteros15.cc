@@ -218,7 +218,7 @@ void Ballesteros15ParserState::SwapPerformer::perform_action(const unsigned & ac
   }
 }
 
-Ballesteros15ParserModel::Ballesteros15ParserModel(dynet::Model & m,
+Ballesteros15ParserModel::Ballesteros15ParserModel(dynet::ParameterCollection & m,
                                                    unsigned size_c,
                                                    unsigned dim_c,
                                                    unsigned dim_w,
@@ -414,7 +414,7 @@ std::vector<dynet::Expression> Ballesteros15ParserState::get_params() {
 }
 
 Ballesteros15ParserStateBuilder::Ballesteros15ParserStateBuilder(const po::variables_map & conf,
-                                                                 dynet::Model & model,
+                                                                 dynet::ParameterCollection & model,
                                                                  TransitionSystem & system,
                                                                  const Corpus & corpus,
                                                                  const Embeddings & pretrained) : 

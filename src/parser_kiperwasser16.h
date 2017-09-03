@@ -3,7 +3,6 @@
 
 #include "parser.h"
 #include "corpus.h"
-#include "state.h"
 #include "system.h"
 #include "dynet/lstm.h"
 #include "dynet_layer/layer.h"
@@ -33,7 +32,7 @@ struct Kiperwasser16ParserModel : public ParserModel {
   unsigned size_w, dim_w, size_p, dim_p, size_t, dim_t, size_a;
   unsigned n_layers, dim_lstm_in, dim_hidden;
 
-  Kiperwasser16ParserModel(dynet::Model& m,
+  Kiperwasser16ParserModel(dynet::ParameterCollection & m,
                            unsigned size_w,  //
                            unsigned dim_w,   // word size, word dim
                            unsigned size_p,  //
@@ -119,7 +118,7 @@ struct Kiperwasser16ParserStateBuilder : public ParserStateBuilder {
   Kiperwasser16ParserModel * parser_model;
 
   Kiperwasser16ParserStateBuilder(const po::variables_map & conf,
-                                  dynet::Model & model,
+                                  dynet::ParameterCollection & model,
                                   TransitionSystem & system,
                                   const Corpus & corpus,
                                   const Embeddings & pretrained);

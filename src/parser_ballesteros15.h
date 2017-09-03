@@ -3,7 +3,6 @@
 
 #include "parser.h"
 #include "corpus.h"
-#include "state.h"
 #include "system.h"
 #include "dynet/lstm.h"
 #include "dynet_layer/layer.h"
@@ -51,7 +50,7 @@ struct Ballesteros15ParserModel : public ParserModel {
   unsigned size_c, dim_c, dim_w, size_p, dim_p, size_t, dim_t, size_l, dim_l, size_a, dim_a;
   unsigned n_layers, dim_lstm_in, dim_hidden;
 
-  Ballesteros15ParserModel(dynet::Model& m,
+  Ballesteros15ParserModel(dynet::ParameterCollection & m,
                            unsigned size_c,
                            unsigned dim_c,
                            unsigned dim_w,   // word size, word dim
@@ -145,7 +144,7 @@ struct Ballesteros15ParserStateBuilder : public ParserStateBuilder {
   Ballesteros15ParserModel * parser_model;
 
   Ballesteros15ParserStateBuilder(const po::variables_map & conf,
-                                  dynet::Model & model,
+                                  dynet::ParameterCollection & model,
                                   TransitionSystem & system,
                                   const Corpus & corpus,
                                   const Embeddings & pretrained);

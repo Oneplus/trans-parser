@@ -10,7 +10,7 @@
 namespace po = boost::program_options;
 
 ParserStateBuilder * get_state_builder(const po::variables_map & conf,
-                                       dynet::Model & model,
+                                       dynet::ParameterCollection & model,
                                        TransitionSystem & system,
                                        const Corpus & corpus,
                                        const Embeddings & pretrained);

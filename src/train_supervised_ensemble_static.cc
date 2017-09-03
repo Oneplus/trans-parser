@@ -20,10 +20,11 @@ void SupervisedEnsembleStaticTrainer::train(const po::variables_map & conf,
                                             const std::string & name,
                                             const std::string & output,
                                             bool allow_nonprojective) {
-  dynet::Model & model = state_builder.model;
+  dynet::ParameterCollection & model = state_builder.model;
   _INFO << "ENS_STAT:: start training static ensemble LSTM-parser.";
 
   dynet::Trainer* trainer = get_trainer(conf, model);
+  float eta0 = trainer->learning_rate;
   unsigned max_iter = conf["max_iter"].as<unsigned>();
 
   float llh = 0.f, llh_in_batch = 0.f, best_f = 0.f;
@@ -85,8 +86,7 @@ void SupervisedEnsembleStaticTrainer::train(const po::variables_map & conf,
       _INFO << "ENS_STAT:: new best record achieved: " << best_f << ", saved.";
       dynet::save_dynet_model(name, (&model));
     }
-    trainer->update_epoch();
-    trainer->status();
+    update_trainer(conf, eta0, static_cast<float>(iter), trainer);
   }
   delete trainer;
 }
@@ -97,8 +97,8 @@ float SupervisedEnsembleStaticTrainer::train_full_tree(const InputUnits & input_
                                                        dynet::Trainer * trainer) {
   TransitionSystem & system = state_builder.system;
   std::vector<unsigned> ref_actions;
-  for (unsigned i = 0; i < action_units.actions.size(); ++i) {
-    ref_actions.push_back(action_units.actions[i].action);
+  for (auto & payload : action_units.actions) {
+    ref_actions.push_back(payload.action);
   }
   ParserState * parser_state = state_builder.build();
   dynet::ComputationGraph cg;
@@ -127,8 +127,8 @@ float SupervisedEnsembleStaticTrainer::train_full_tree(const InputUnits & input_
     parser_state->perform_action(action, cg, transition_state);
     n_actions++;
   }
-  float ret = 0.;
-  if (loss.size() > 0) {
+  float ret = 0.f;
+  if (loss.empty() == false) {
     std::vector<dynet::Expression> all_params = parser_state->get_params();
     std::vector<dynet::Expression> reg;
     for (auto e : all_params) { reg.push_back(dynet::squared_norm(e)); }

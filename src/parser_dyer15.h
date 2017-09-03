@@ -3,7 +3,6 @@
 
 #include "parser.h"
 #include "corpus.h"
-#include "state.h"
 #include "system.h"
 #include "dynet/lstm.h"
 #include "dynet_layer/layer.h"
@@ -42,7 +41,7 @@ struct Dyer15ParserModel : public ParserModel {
   unsigned size_w, dim_w, size_p, dim_p, size_t, dim_t, size_l, dim_l, size_a, dim_a;
   unsigned n_layers, dim_lstm_in, dim_hidden;
 
-  Dyer15ParserModel(dynet::Model& m,
+  Dyer15ParserModel(dynet::ParameterCollection & m,
                     unsigned size_w,  //
                     unsigned dim_w,   // word size, word dim
                     unsigned size_p,  //
@@ -135,7 +134,7 @@ struct Dyer15ParserStateBuilder : public ParserStateBuilder {
   Dyer15ParserModel * parser_model;
 
   Dyer15ParserStateBuilder(const po::variables_map & conf,
-                           dynet::Model & model,
+                           dynet::ParameterCollection & model,
                            TransitionSystem & system,
                            const Corpus & corpus,
                            const Embeddings & pretrained);

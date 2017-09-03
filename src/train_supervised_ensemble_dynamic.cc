@@ -73,10 +73,11 @@ void SupervisedEnsembleDynamicTrainer::train(const po::variables_map& conf,
                                              const std::string& output,
                                              bool allow_nonprojective,
                                              bool allow_partial_tree) {
-  dynet::Model& model = state_builder.model;
+  dynet::ParameterCollection & model = state_builder.model;
   _INFO << "ENS_DYN:: start lstm-parser supervised ensemble training.";
 
   dynet::Trainer* trainer = get_trainer(conf, model);
+  float eta0 = trainer->learning_rate;
   unsigned max_iter = conf["max_iter"].as<unsigned>();
 
   float llh = 0.f, llh_in_batch = 0.f, best_f = 0.f;
@@ -129,8 +130,7 @@ void SupervisedEnsembleDynamicTrainer::train(const po::variables_map& conf,
       _INFO << "ENS_DYN:: new best record achieved: " << best_f << ", saved.";
       dynet::save_dynet_model(name, (&model));
     }
-    trainer->update_epoch();
-    trainer->status();
+    update_trainer(conf, eta0, static_cast<float>(iter) + 1.f, trainer);
   }
 
   delete trainer;
@@ -140,7 +140,6 @@ void SupervisedEnsembleDynamicTrainer::add_loss_one_step(dynet::Expression & sco
                                                          const std::vector<unsigned> & valid_actions,
                                                          const std::vector<float> & probs,
                                                          std::vector<dynet::Expression> & loss) {
-  TransitionSystem & system = state_builder.system;
   if (objective_type == kSparseCrossEntropy) {
     auto best = ParserState::get_best_action(probs, valid_actions);
     loss.push_back(dynet::pickneglogsoftmax(score_expr, best.first));

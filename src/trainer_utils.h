@@ -18,9 +18,11 @@ void get_orders(Corpus& corpus,
 po::options_description get_optimizer_options();
 
 dynet::Trainer* get_trainer(const po::variables_map& conf,
-                            dynet::Model& model);
+                            dynet::ParameterCollection & model);
 
 void update_trainer(const po::variables_map& conf,
+                    const float & eta0,
+                    const float & iter,
                     dynet::Trainer* trainer);
 
 std::string get_model_name(const po::variables_map& conf,

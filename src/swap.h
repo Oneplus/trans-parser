@@ -27,7 +27,7 @@ struct Swap : public TransitionSystem {
                             const std::vector<unsigned>& actions,
                             const std::vector<unsigned>& ref_heads,
                             const std::vector<unsigned>& ref_deprels,
-                            std::vector<float>& rewards);
+                            std::vector<float>& rewards) override;
 
   void perform_action(TransitionState& state, const unsigned& action) override;
 

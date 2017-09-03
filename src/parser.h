@@ -13,7 +13,7 @@ namespace po = boost::program_options;
 struct ParserModel {
   TransitionSystem & system;
 
-  ParserModel(TransitionSystem & system) : system(system) {}
+  explicit ParserModel(TransitionSystem & system) : system(system) {}
 
   ~ParserModel() {}
 
@@ -47,10 +47,10 @@ struct ParserState {
 };
 
 struct ParserStateBuilder {
-  dynet::Model & model;
+  dynet::ParameterCollection & model;
   TransitionSystem & system;
 
-  ParserStateBuilder(dynet::Model & model,
+  ParserStateBuilder(dynet::ParameterCollection & model,
                      TransitionSystem & system) : model(model), system(system) {}
 
   virtual ParserState * build() = 0;

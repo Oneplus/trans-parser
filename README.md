@@ -84,7 +84,7 @@ Commands:
     -T ./data/PTB_train_auto.conll \
     -d ./data/PTB_development_auto.conll \
     -w ./data/sskip.100.vectors.ptb_filtered \
-    --lambda 1e-5 \
+    --lambda 1e-6 \
     --noisify_method singleton \
     --optimizer_enable_eta_decay true \
     --optimizer_enable_clipping true \
@@ -102,7 +102,7 @@ Commands:
     -T ./data/PTB_train_auto.conll \
     -d ./data/PTB_development_auto.conll \
     -w ./data/sskip.100.vectors.ptb_filtered \
-    --lambda 1e-5 \
+    --lambda 1e-6 \
     --noisify_method singleton \
     --optimizer_enable_eta_decay true \
     --optimizer_enable_clipping true \
@@ -132,10 +132,14 @@ Commands:
     -T ./data/PTB_train_auto.drop_arc_0.50.conll \
     -d ./data/PTB_development_auto.conll \
     -w ./data/sskip.100.vectors.ptb_filtered \
-    --lambda 1e-5 \
+    --lambda 1e-6 \
     --noisify_method singleton \
     --optimizer_enable_eta_decay true \
     --optimizer_enable_clipping true \
     --external_eval ./script/eval_ex_enpunt.py \
     --partial true
 ```
+
+## Results
+
+**UPDATE**: 2017/09/02

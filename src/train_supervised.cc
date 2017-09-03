@@ -63,10 +63,11 @@ void SupervisedTrainer::train(const po::variables_map& conf,
                               const std::string& output,
                               bool allow_nonprojective,
                               bool allow_partial_tree) {
-  dynet::Model& model = state_builder.model;
+  dynet::ParameterCollection & model = state_builder.model;
   _INFO << "SUP:: start lstm-parser supervised training.";
 
   dynet::Trainer* trainer = get_trainer(conf, model);
+  float eta0 = trainer->learning_rate;
   unsigned max_iter = conf["max_iter"].as<unsigned>();
 
   float llh = 0.f, llh_in_batch = 0.f, best_f = 0.f;
@@ -137,8 +138,7 @@ void SupervisedTrainer::train(const po::variables_map& conf,
       _INFO << "SUP:: new best record achieved: " << best_f << ", saved.";
       dynet::save_dynet_model(name, (&model));
     }
-    trainer->update_epoch();
-    trainer->status();
+    update_trainer(conf, eta0, static_cast<float>(iter) + 1.f, trainer);
   }
 
   delete trainer;

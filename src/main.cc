@@ -116,7 +116,7 @@ int main(int argc, char** argv) {
 
   _INFO << "Main:: after loading pretrained embedding, size(vocabulary)=" << corpus.word_map.size();
 
-  dynet::Model model;
+  dynet::ParameterCollection model;
   TransitionSystem* sys = TransitionSystemBuilder(corpus).build(conf);
   bool allow_non_projective = TransitionSystemBuilder::allow_nonprojective(conf);
 
