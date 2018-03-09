@@ -29,7 +29,7 @@ void init_command_line(int argc, char* argv[], po::variables_map& conf) {
     ("pretrained,w", po::value<std::string>(), "The path to the word embedding.")
     ("model,m", po::value<std::string>(), "The path to the model.")
     ("layers", po::value<unsigned>()->default_value(2), "The number of layers in LSTM.")
-    ("char_dim", po::value<unsigned>()->default_value(16), "The dimension of char.")
+    ("char_dim", po::value<unsigned>()->default_value(50), "The dimension of char.")
     ("word_dim", po::value<unsigned>()->default_value(32), "number of LSTM layers.")
     ("pos_dim", po::value<unsigned>()->default_value(12), "POS dim, set it as 0 to disable POS.")
     ("pretrained_dim", po::value<unsigned>()->default_value(100), "Pretrained input dimension.")
@@ -87,8 +87,12 @@ int main(int argc, char** argv) {
 
   std::string model_name;
   if (conf.count("train")) {
-    std::string prefix("parser_l2r.model");
-    model_name = get_model_name(conf, prefix);
+    if (conf.count("model")) {
+      model_name = conf["model"].as<std::string>();
+    } else {
+      std::string prefix("parser_l2r.model");
+      model_name = get_model_name(conf, prefix);
+    }
     _INFO << "Main:: write parameters to: " << model_name;
   } else {
     model_name = conf["model"].as<std::string>();
@@ -97,9 +101,15 @@ int main(int argc, char** argv) {
 
   bool allow_partial_tree = conf["partial"].as<bool>();
   Corpus corpus;
-  if (conf.count("word_list")) { corpus.load_word_list(conf["word_list"].as<std::string>()); }
-  if (conf.count("pos_list")) { corpus.load_pos_list(conf["pos_list"].as<std::string>()); }
-  if (conf.count("deprel_list")) { corpus.load_deprel_list(conf["deprel_list"].as<std::string>()); }
+  if (conf.count("word_list")) {
+    corpus.load_word_list(conf["word_list"].as<std::string>());
+  }
+  if (conf.count("pos_list")) {
+    corpus.load_pos_list(conf["pos_list"].as<std::string>());
+  }
+  if (conf.count("deprel_list")) {
+    corpus.load_deprel_list(conf["deprel_list"].as<std::string>());
+  }
   std::unordered_map<unsigned, std::vector<float>> pretrained;
   if (conf.count("pretrained")) {
     corpus.load_word_embeddings(conf["pretrained"].as<std::string>(),
@@ -144,10 +154,7 @@ int main(int argc, char** argv) {
     trainer.train(conf, corpus, model_name, output, allow_non_projective, allow_partial_tree);
   }
 
-  // for (auto p : model.parameters_list()) delete p;
-  // for (auto p : model.lookup_parameters_list()) delete p;
   dynet::load_dynet_model(model_name, (&model));
-
   if (conf.count("beam_size") && conf["beam_size"].as<unsigned>() > 1) {
     bool structure_test = (conf["supervised_objective"].as<std::string>() == "structure");
     beam_search(conf, corpus, *state_builder, output, structure_test);

@@ -128,7 +128,7 @@ float SupervisedEnsembleStaticTrainer::train_full_tree(const InputUnits & input_
     n_actions++;
   }
   float ret = 0.f;
-  if (loss.empty() == false) {
+  if (!loss.empty()) {
     std::vector<dynet::Expression> all_params = parser_state->get_params();
     std::vector<dynet::Expression> reg;
     for (auto e : all_params) { reg.push_back(dynet::squared_norm(e)); }

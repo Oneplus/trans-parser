@@ -173,8 +173,6 @@ int main(int argc, char** argv) {
     EnsembleStaticDataGenerator generator(conf, pretrained_state_builders);
     generator.generate(conf, corpus, output, allow_non_projective);
   } else {
-    for (auto p : model->parameters_list()) delete p;
-    for (auto p : model->lookup_parameters_list()) delete p;
     dynet::load_dynet_model(model_name, model);
     evaluate(conf, corpus, *state_builder, output);
   }

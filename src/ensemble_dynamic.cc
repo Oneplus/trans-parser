@@ -157,8 +157,6 @@ int main(int argc, char** argv) {
   if (conf.count("test_ensemble")) {
     evaluate(conf, corpus, pretrained_state_builders, output);
   } else {
-    for (auto p : model.parameters_list()) delete p;
-    for (auto p : model.lookup_parameters_list()) delete p;
     dynet::load_dynet_model(model_name, (&model));
     evaluate(conf, corpus, *state_builder, output);
   }

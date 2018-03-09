@@ -171,7 +171,7 @@ void Corpus::parse_data(const std::string& data,
       input_unit.n_str = tokens[2];
       input_unit.f_str = tokens[5];
 
-      if (allow_partial_tree && tokens[6] == "_") {
+      if (allow_partial_tree && tokens[6] == "<UNK>") {
         parse_unit.head = UNDEF_HED;
         parse_unit.deprel = UNDEF_DEL;
       } else {
